@@ -9,7 +9,7 @@
 
 [![paypal](https://ionicabizau.github.io/badges/paypal.svg)](https://www.paypal.com/paypalme/iewil)
 [![Dana](https://img.shields.io/badge/Dana-Idr-blue.svg?logo=data:image/svg%2bxml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPg0KPHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgaWQ9ImEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHN0eWxlPi5ie2ZpbGw6bm9uZTtzdHJva2U6IzAwMDAwMDtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fTwvc3R5bGU+PC9kZWZzPjxwYXRoIGNsYXNzPSJiIiBkPSJtMzUuNSwxNy44MTIxYy03LjY2NjctNS40NDUzLTE1LjMzMzQsNS40NDUzLTIzLDB2MTIuMzc1N2M3LjY2NjYsNS40NDUzLDE1LjMzMzMtNS40NDUzLDIzLDB2LTEyLjM3NTdaIi8+PGNpcmNsZSBjbGFzcz0iYiIgY3g9IjI0IiBjeT0iMjQiIHI9IjIxLjUiLz48L3N2Zz4=)](https://link.dana.id/qr/39zejqet)
-# Instalasion
+# Installation
 ```
 pkg update -y && pkg update -y
 ```
