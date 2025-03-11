@@ -1,5 +1,9 @@
 <?php
 
+if($argv[1] !== "error"){
+	error_reporting(0);
+}
+
 require "modul/class.php";
 
 Display::Banner_menu();

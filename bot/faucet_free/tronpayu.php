@@ -16,11 +16,11 @@ youtube = "https://youtube.com/@iewil";
 class Bot {
 	function __construct(){
 		Display::Ban(title, versi);
+		
 		cookie:
-		if(empty(Functions::getConfig('cookie'))){
-			Display::Cetak("Register",refflink);
-			Display::Line();
-		}
+		Display::Cetak("Register",refflink);
+		Display::Line();
+			
 		$this->cookie = Functions::setConfig("cookie");
 		$this->csrf = $this->getCsrf();
 		$this->uagent = Functions::setConfig("user_agent");
@@ -118,7 +118,8 @@ class Bot {
 			$r = json_decode(Requests::post(host."process.php",array_merge($this->headers(),["x-requested-with: XMLHttpRequest"]), $data)[1],1);
 			if($r["ret"] < 1){
 				print Display::Error($r["mes"].n);
-				Functions::Tmr(600);
+				Functions::Tmr(3600);
+				Display::Line();
 			}
 			if($r["num"]){
 				Functions::Roll($r["num"]);
@@ -153,8 +154,8 @@ class Bot {
 		$r = json_decode(base64_decode(Requests::post($url, $icon_header, $data)[1]),1);
 		$base64Image = $r["challenge"];
 		$challengeId = $r["identifier"];
-		if(!$base64Image){
-			print_r($r);exit;
+		if(!$base64Image || !$challengeId){
+			return;
 		}
 		$cap = $this->iewil->IconCoordiant($base64Image);
 		if(!$cap['x'])return;

@@ -74,8 +74,8 @@ Class Requests {
 	static function post($url, $head=0, $data_post=0){return self::curl($url,$head, 1, $data_post);}
 	static function getXskip($url, $head =0){return self::curl($url,$head,'','','','',1);}
 	static function postXskip($url, $head=0, $data_post=0){return self::curl($url,$head, 1, $data_post,'','',1);}
-	static function getXcookie($url, $head=0, $cookie=0){if(!$cookie){$cookie ="cookie.txt";}return self::curl($url,$head,'','',$cookie);}
-	static function postXcookie($url, $head=0, $data_post=0, $cookie=0){if(!$cookie){$cookie ="cookie.txt";}return self::curl($url,$head,1,$data_post,$cookie);}
+	static function getXcookie($url, $head=0, $cookie=0){if(!$cookie){$cookie = "data/".title."/cookie.txt";}return self::curl($url,$head,'','',$cookie);}
+	static function postXcookie($url, $head=0, $data_post=0, $cookie=0){if(!$cookie){$cookie = "data/".title."/cookie.txt";}return self::curl($url,$head,1,$data_post,$cookie);}
 	static function getXproxy($url, $head=0, $proxy){return self::curl($url,$head,'','',1,$proxy);}
 	static function postXproxy($url, $head=0, $data_post, $proxy){return self::curl($url,$head,1,$data_post,1,$proxy);}
 }
@@ -137,6 +137,45 @@ class Functions {
 		}
 		return $data;
 	}
+	static function cofigApikey(){
+		$configFile = "data/Apikey.json";
+		Display::Title("Select Apikey");
+		if(file_exists($configFile)){
+			$apikey = json_decode(file_get_contents($configFile),1);
+		}else{
+			$apikey = [
+				[
+					"provider" => "xevil",
+					"url" => "https://sctg.xyz/", 
+					"register" => "t.me/Xevil_check_bot?start=1204538927", 
+					"apikey" => ""
+				],
+				[
+					"provider" => "multibot", 
+					"url" => "http://api.multibot.in/", 
+					"register" => "http://api.multibot.in", 
+					"apikey" => ""
+				]
+			];
+		}
+		
+		foreach($apikey as $no => $api){
+			$cek = ($api["apikey"])? "✓":"?";
+			Display::Menu($no, $api["provider"]." [$cek]");
+		}
+		print Display::isi("Number");
+		$type = readline();
+		Display::Line();
+		if($apikey[$type]["apikey"]){
+			return $apikey[$type];
+		}
+		Display::Cetak("Register", $apikey[$type]["register"]);
+		print Display::isi($apikey[$type]["provider"]." Apikey");
+		$api = readline();
+		$apikey[$type]["apikey"] = $api;
+		file_put_contents($configFile, json_encode($apikey, JSON_PRETTY_PRINT));
+		return $apikey[$type];
+	}
 	static function removeConfig($nama_data){
 		unlink(self::$configFile."/".$nama_data);
 		print Display::Sukses("Berhasil menghapus ".$nama_data);
@@ -157,7 +196,7 @@ class Functions {
 		}
 		file_put_contents("data/view",$tanggal);
 	}
-	private function Roll($str){
+	static function Roll($str){
 		for($i = 0;$i < 10; $i ++){
 			print h."Number: ".p.rand(0,9).rand(0,9).rand(0,9).rand(0,9);
 			usleep(rand(100000,1000000));
@@ -165,9 +204,8 @@ class Functions {
 		}
 		print h."Number: ".p.$str;
 	}
-	static function temporary($newdata,$data=0){if(!$data){$data = [];}return array_merge($data,$newdata);}
+	
 	static function cfDecodeEmail($encodedString){$k = hexdec(substr($encodedString,0,2));for($i=2,$email='';$i<strlen($encodedString)-1;$i+=2){$email.=chr(hexdec(substr($encodedString,$i,2))^$k);}return $email;}
-	static function getConfig($key){if(!file_exists(self::$configFile)){$config = [];}else{$config = json_decode(file_get_contents(self::$configFile),1);}return $config[$key];}
 	static function clean($str){return explode('.', $str)[0];}
 }
 
@@ -227,28 +265,15 @@ class HtmlScrap {
 }
 
 class Captcha {
-	private $url,$key,$provider, $function;
 	public function __construct(){
-		if(empty(Functions::getConfig('type'))){
-			print o."Select Apikey\n";
-			Display::Menu(1, "Multibot");
-			Display::Menu(2, "Xevil");
-            print o."Please input number only\n";
-            Functions::setConfig("type");
-			Display::Line();
+		$type = Functions::cofigApikey();
+		$this->url = $type["url"];
+		$this->provider = $type["provider"];
+		if($this->provider == "xevil"){
+			$this->key = $type["apikey"]."|SOFTID1204538927";
+		}else{
+			$this->key = $type["apikey"];
 		}
-		if(Functions::getConfig("type") == 1){
-            $this->url = 'http://api.multibot.in/';
-			Display::Cetak("Register","http://api.multibot.in");
-			$this->key = Functions::setConfig("multibot_apikey");
-			$this->provider = Functions::HiddenConfig("provider", "Multibot");
-        }
-        else{
-            $this->url = 'https://sctg.xyz/';
-			Display::Cetak("Register","t.me/Xevil_check_bot?start=1204538927");
-			$this->key = Functions::setConfig("xevil_apikey")."|SOFTID1204538927";
-			$this->provider = Functions::HiddenConfig("provider", "Xevil");
-        }
 	}
 	private function in_api($content, $method, $header = 0){$param = "key=".$this->key."&json=1&".$content;if($method == "GET")return json_decode(file_get_contents($this->url.'in.php?'.$param),1);$opts['http']['method'] = $method;if($header) $opts['http']['header'] = $header;$opts['http']['content'] = $param;return file_get_contents($this->url.'in.php', false, stream_context_create($opts));}
 	private function res_api($api_id){$params = "?key=".$this->key."&action=get&id=".$api_id."&json=1";return json_decode(file_get_contents($this->url."res.php".$params),1);}
@@ -261,9 +286,9 @@ class Captcha {
 	public function Hcaptcha($sitekey, $pageurl ){$data = http_build_query(["method" => "hcaptcha","sitekey" => $sitekey,"pageurl" => $pageurl]);return $this->getResult($data, "GET");}
 	public function Turnstile($sitekey, $pageurl){$data = http_build_query(["method" => "turnstile","sitekey" => $sitekey,"pageurl" => $pageurl]);return $this->getResult($data, "GET");}
 	public function Authkong($sitekey, $pageurl){$data = http_build_query(["method" => "authkong","sitekey" => $sitekey,"pageurl" => $pageurl]);return $this->getResult($data, "GET");}
-	public function Ocr($img){if($this->provider == "Xevil"){$data = "method=base64&body=".$img;}else{$data = http_build_query(["method" => "universal","body" => $img]);}return $this->getResult($data, "POST");}
-	public function AntiBot($source){$main = explode('"',explode('data:image/png;base64,',explode('Bot links',$source)[1])[1])[0];if(!$main)return 0;if($this->provider == "Xevil"){$data = "method=antibot&main=$main";}else{$data["method"] = "antibot";$data["main"] = $main;}$src = explode('rel=\"',$source);foreach($src as $x => $sour){if($x == 0)continue;$no = explode('\"',$sour)[0];if($this->provider == "Xevil"){$img = explode('\"',explode('data:image/png;base64,',$sour)[1])[0];$data .= "&$no=$img";}else{$img = explode('\"',explode('src=\"',$sour)[1])[0];$data[$no] = $img;}}if($this->provider == "Xevil"){$res = $this->getResult($data, "POST");}else{$data = http_build_query($data);$ua = "Content-type: application/x-www-form-urlencoded";$res = $this->getResult($data, "POST", $ua);}if($res)return "+".str_replace(",","+",$res);return 0;}
-	public function Teaserfast($main, $small){if($this->provider == "Multibot"){return ["error"=> true, "msg" => "not support key!"];}$data = http_build_query(["method" => "teaserfast","main_photo" => $main,"task" => $small]);$ua = "Content-type: application/x-www-form-urlencoded";return $this->getResult($data, "POST",$ua);}
+	public function Ocr($img){if($this->provider == "xevil"){$data = "method=base64&body=".$img;}else{$data = http_build_query(["method" => "universal","body" => $img]);}return $this->getResult($data, "POST");}
+	public function AntiBot($source){$main = explode('"',explode('data:image/png;base64,',explode('Bot links',$source)[1])[1])[0];if(!$main)return 0;if($this->provider == "xevil"){$data = "method=antibot&main=$main";}else{$data["method"] = "antibot";$data["main"] = $main;}$src = explode('rel=\"',$source);foreach($src as $x => $sour){if($x == 0)continue;$no = explode('\"',$sour)[0];if($this->provider == "xevil"){$img = explode('\"',explode('data:image/png;base64,',$sour)[1])[0];$data .= "&$no=$img";}else{$img = explode('\"',explode('src=\"',$sour)[1])[0];$data[$no] = $img;}}if($this->provider == "xevil"){$res = $this->getResult($data, "POST");}else{$data = http_build_query($data);$ua = "Content-type: application/x-www-form-urlencoded";$res = $this->getResult($data, "POST", $ua);}if($res)return "+".str_replace(",","+",$res);return 0;}
+	public function Teaserfast($main, $small){if($this->provider == "multibot"){return ["error"=> true, "msg" => "not support key!"];}$data = http_build_query(["method" => "teaserfast","main_photo" => $main,"task" => $small]);$ua = "Content-type: application/x-www-form-urlencoded";return $this->getResult($data, "POST",$ua);}
 }
 
 class Iewil {
