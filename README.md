@@ -1,4 +1,7 @@
 # Script_Library
+### Here I will create more than hundreds of scripts
+I may not be able to check the scripts one by one, so if you experience an error, you can enter my group on Telegram and tell me about the problem that occurred and don't forget to screenshot the error to make it easier to check.
+
 [![Youtube](https://img.shields.io/youtube/channel/subscribers/UCvBSqRaT6nsPvtl8m6GaQpg?style=social)](https://youtube.com/c/iewil)
 [![Github](https://img.shields.io/github/followers/iewilmaestro?style=social)](https://github.com/iewilmaestro)
 [![Telegram](https://img.shields.io/badge/fat9ght-green?style=social&logo=Telegram)](https://t.me/fat9ght)
