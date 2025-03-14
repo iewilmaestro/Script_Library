@@ -118,6 +118,9 @@ class Bot {
 			$r = json_decode(Requests::post(host."process.php",array_merge($this->headers(),["x-requested-with: XMLHttpRequest"]), $data)[1],1);
 			if($r["ret"] < 1){
 				print Display::Error($r["mes"].n);
+				if($r["mes"] == "You have to login to continue!"){
+					return 1;
+				}
 				Functions::Tmr(3600);
 				Display::Line();
 			}
