@@ -171,7 +171,7 @@ class Bot {
 				continue;
 			}
 			if($scrap['cloudflare']){
-				print Display::Error(host."faucet/currency/".$coin.n);
+				print Display::Error(host."faucet".$coin.n);
 				print Display::Error("Cloudflare Detect\n");
 				Display::Line();
 				return 1;
