@@ -68,6 +68,7 @@ class Bot {
 				Display::Line();
 				return 1;
 			}
+			if($scrap['faucet'][1][0] < 1)break;
 			$tmr = explode('-', explode('var wait = ', $r)[1])[0];
 			if($tmr){
 				Functions::Tmr($tmr);
@@ -88,7 +89,6 @@ class Bot {
 			$data = http_build_query($data);
 			$r = Requests::post(host."faucet/verify", $this->headers(), $data)[1];
 			$scrap = $this->scrap->Result($r);
-			
 			preg_match('/Toast\.fire\(\s*{\s*icon:\s*"([^"]*)"\s*,\s*title:\s*"([^"]*)"\s*}\s*\);/', $r, $matches);
 			if($matches[1] == 'success'){
 				Display::Cetak('Limit', $scrap['faucet'][0][0]);
@@ -101,6 +101,8 @@ class Bot {
 				Display::Line();
 			}
 		}
+		print Display::Error("Faucet Finished\n");
+		Display::Line();
 	}
 	private function iconBypass($token, $url = host."icaptcha/req", $theme = "light"){
 		
