@@ -61,7 +61,7 @@ class Bot{
 			$data = [];
 			$r = Requests::get(host."surf/browse/",$this->headers())[1];
 			if(!preg_match("/Skip/",$r)){
-				print Display::Error("Ads habis".n);
+				print Display::Error("Ads Finished\n");
 				Display::Line();
 				break;
 			}
@@ -82,7 +82,6 @@ class Bot{
 			Display::Cetak("Balance",$bal);
 			Display::Line();
 		}
-		print Display::Error("Ads Finished\n");
 	}
 }
 
