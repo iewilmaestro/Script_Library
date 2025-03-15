@@ -42,6 +42,47 @@ class Bot {
 			goto cookie;
 		}
 	}
+	private function check_code($response){
+		return ($response["status_code"] == 200)?true:false;
+	}
+	private function get($url, $head){
+		$attempt = 0;
+		while(true){
+			$response = Requests::get($url, $head);
+			print "\r                              \r";
+			if($this->check_code($response))return $response;
+			$body = strtolower($response[1]);
+			$title = explode('</title>', explode('<title>', $body)[1])[0];
+			if($title){
+				print Display::Error($title);
+				sleep(10);
+				print "\r   ".str_repeat(" ",strlen($title))."   \r";
+				continue;
+			}
+			$attempt++;
+			print Display::Error("try reconnecting..($attempt)");
+			sleep(10);
+		}
+	}
+	private function post($url, $head, $data){
+		$attempt = 0;
+		while(true){
+			$response = Requests::post($url, $head, $data);
+			print "\r                              \r";
+			if($this->check_code($response))return $response;
+			$body = strtolower($response[1]);
+			$title = explode('</title>', explode('<title>', $body)[1])[0];
+			if($title){
+				print Display::Error($title);
+				sleep(10);
+				print "\r   ".str_repeat(" ",strlen($title))."   \r";
+				continue;
+			}
+			$attempt++;
+			print Display::Error("try reconnecting..($attempt)");
+			sleep(10);
+		}
+	}
 	private function headers($data=0){
 		$h[] = "Host: ".parse_url(host)['host'];
 		if($data)$h[] = "Content-Length: ".strlen($data);
@@ -50,7 +91,7 @@ class Bot {
 		return $h;
 	}
 	private function Dashboard(){
-		$r = Requests::get(host,$this->headers())[1];
+		$r = $this->get(host,$this->headers())[1];
 		if(!preg_match('/Logout/',$r)){
 			return ["Logout" => true];
 		}else{
@@ -59,7 +100,7 @@ class Bot {
 	}
 	private function Firewall(){
 		while(1){
-			$r = Requests::get(host."firewall",$this->headers())[1];
+			$r = $this->get(host."firewall",$this->headers())[1];
 			$scrap = $this->scrap->Result($r);
 			
 			$data = $scrap['input'];
@@ -81,7 +122,7 @@ class Bot {
 			}
 			if(!$cap)continue;
 			
-			$r = Requests::post(host."firewall/verify",$this->headers(), http_build_query($data))[1];
+			$r = $this->post(host."firewall/verify",$this->headers(), http_build_query($data))[1];
 			if(preg_match('/Invalid Captcha/',$r))continue;
 			Display::Cetak("Firewall","Bypassed");
 			Display::Line();
@@ -90,7 +131,7 @@ class Bot {
 	}
 	private function Claim(){
 		if(!$this->coins){
-			$r = Requests::get(host,$this->headers())[1];
+			$r = $this->get(host,$this->headers())[1];
 			preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/faucet\/currency\/([a-zA-Z0-9]+)#', $r, $matches);
 			$this->coins = array_unique($matches[1]);
 		}
@@ -102,7 +143,7 @@ class Bot {
 				return 1;
 			}
 			foreach($this->coins as $a => $coin){
-				$r = Requests::get(host."faucet/currency/".$coin,$this->headers())[1];
+				$r = $this->get(host."faucet/currency/".$coin,$this->headers())[1];
 				$scrap = $this->scrap->Result($r);
 				
 				if($scrap['firewall']){
@@ -154,7 +195,7 @@ class Bot {
 				}
 				
 				$data = http_build_query($data);
-				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
+				$r = $this->post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
 				$scrap2 = $this->scrap->Result($r);
 				if($scrap2['firewall']){
 					print Display::Error("Firewall Detect\n");

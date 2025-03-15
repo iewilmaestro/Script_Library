@@ -70,9 +70,7 @@ const LIST_YOUTUBE = [
 
 Class Requests {
 	static function Curl($url, $header=0, $post=0, $data_post=0, $cookie=0, $proxy=0, $skip=0){
-		$max_retries = 5;
-		$attempt = 0;
-		while ($attempt < $max_retries) {
+		while(true){
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -81,51 +79,27 @@ Class Requests {
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
 			curl_setopt($ch, CURLOPT_COOKIE,TRUE);
-			if($cookie){
-				curl_setopt($ch, CURLOPT_COOKIEFILE,$cookie);
-				curl_setopt($ch, CURLOPT_COOKIEJAR,$cookie);
-			}
-			if($post) {
-				curl_setopt($ch, CURLOPT_POST, true);
-			}
-			if($data_post) {
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $data_post);
-			}
-			if($header) {
-				curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-			}
-			if($proxy){
-				curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, true);
-				curl_setopt($ch, CURLOPT_PROXY, $proxy);
-			}
+			if($cookie){curl_setopt($ch, CURLOPT_COOKIEFILE,$cookie);curl_setopt($ch, CURLOPT_COOKIEJAR,$cookie);}
+			if($post) {curl_setopt($ch, CURLOPT_POST, true);}
+			if($data_post) {curl_setopt($ch, CURLOPT_POSTFIELDS, $data_post);}
+			if($header) {curl_setopt($ch, CURLOPT_HTTPHEADER, $header);}
+			if($proxy){curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, true);curl_setopt($ch, CURLOPT_PROXY, $proxy);}
 			curl_setopt($ch, CURLOPT_HEADER, true);
 			$r = curl_exec($ch);
-			if($skip){
-				return;
-			}
+			if($skip){return;}
 			$c = curl_getinfo($ch);
-			if(!$c) return "Curl Error : ".curl_error($ch);
-			else{
+			if(!$c) return "Curl Error : ".curl_error($ch); else{
 				$head = substr($r, 0, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
 				$body = substr($r, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
 				$status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 				curl_close($ch);
-				if ($status_code == 200) {
-					return array($head,$body);
-				}else{
-					$body = strtolower($body);
-					$title = explode('</title>', explode('<title>', $body)[1])[0];
-					if($title){
-						print $title;
-						sleep(10);
-						print "\r".str_repeat(" ",strlen($title))."\r";
-					}
-					$attempt++;
-					if ($attempt == $max_retries) {
-						print Display::Error("10 times request attempt failed, $title\n");
-						exit;
-					}
+				if(!$body){
+					print "Check your Connection!";
+					sleep(2);
+					print "\r                         \r";
+					continue;
 				}
+				return array($head,$body,"status_code"=>$status_code);
 			}
 		}
 	}
@@ -165,7 +139,14 @@ class Display {
 	}
 	static function Banner_menu(){
 		self::Clear();
-		print "\nScript By iewil\n\n";
+		print up.str_pad("SCRIPT LIBRARY By iewil", 45, " ", STR_PAD_BOTH).d.n.n;
+		print o." YOUTUBE (https://youtube.com/@iewil)\n";
+		print o." BLOGGER (https://iewilofficial.blogspot.com)\n";
+		print o." TELEGRAM (https://t.me/MaksaJoin)\n";
+		print o." WEBSITE (https://iewilbot.my.id)\n\n";
+		
+		print k." Update Manual script by command `git pull`\n";
+		print m.str_pad("(before run script!)", 45, " ", STR_PAD_BOTH).n.n;
 	}
 	static function ipApi(){
 		$r = json_decode(file_get_contents("http://ip-api.com/json"));
@@ -378,14 +359,14 @@ class Iewil {
 			return $r['result'];
 		}
 		if($r["msg"]){
-			print substr($r["msg"],0,30);
+			print Display::Error(substr($r["msg"],0,30));
 			sleep(2);
-			print "\r                                   \r";
+			print "\r                                      \r";
 		}
 		
-		print "captcha cannot be solve";
+		print Display::Error("iewilbot say captcha can't be solve");
 		sleep(2);
-		print "\r                                   \r";
+		print "\r                                          \r";
 		
 	}
 	public function IconCoordiant($base64Img){
