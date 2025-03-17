@@ -2,8 +2,8 @@
 
 const
 versi = "0.0.1",
-host = "https://whoopyrewards.com/",
-refflink = "https://whoopyrewards.com/?r=76779",
+host = "https://onefaucet.in/",
+refflink = "https://onefaucet.in/?r=6482",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
@@ -39,7 +39,13 @@ class Bot {
 			Display::Line();
 			goto cookie;
 		}
-		if($this->faucet()){
+		if($this->faucet("madfaucet")){
+			Functions::removeConfig("cookie");
+			print Display::Error("Cookie Expired\n");
+			Display::Line();
+			goto cookie;
+		}
+		if($this->faucet("faucet")){
 			Functions::removeConfig("cookie");
 			print Display::Error("Cookie Expired\n");
 			Display::Line();
@@ -60,14 +66,15 @@ class Bot {
 		$r = Requests::get(host."dashboard",$this->headers())[1];
 		$scrap = $this->scrap->Result($r);
 		if($scrap['locked']){
+			print Display::Error("Account Locked\n");
 			$tmr = explode('">',explode('<span class="counter" wait="',$r)[1])[0];
 			if($tmr){
 				Functions::Tmr($tmr+5);
 				goto das;
 			}
 		}
-		$bal = explode('</h5>',explode('<h5 class="mb-0">', $r)[1])[0];
-		$username = explode('</span>',explode('<span class="d-none d-xl-inline-block ml-1" key="t-henry">', $r)[1])[0];//iewilmaestro
+		$bal = explode('</h4>',explode('<h4 class="mb-0">', $r)[1])[0];
+		$username = explode('</h5>',explode('<h5 class="font-size-15 text-truncate">', $r)[1])[0];
 		return ["username"=>$username, "balance"=>$bal];
 	}
 	public function Firewall(){
@@ -76,17 +83,13 @@ class Bot {
 			$scrap = $this->scrap->Result($r);
 			$data = $scrap['input'];
 			
-			if($scrap['captcha']){
-				$cap = $scrap['captcha']['g-recaptcha'];
-				if(substr($cap, 0 , 3) == "0x4"){
-					$cap = $this->captcha->Turnstile($cap, host);
-					$data['cf-turnstile-response']=$cap;
-					$data['g-recaptcha-response']=$cap;
-				}else{
-					print Display::Error("Sitekey Error\n"); 
-					continue;
-				}
+			if($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
+				$cap = $this->captcha->Turnstile($scrap['captcha']['mt-3 mb-3 cf-turnstile'], host);
+				$data['cf-turnstile-response']=$cap;
 				if(!$cap)continue;
+			}else{
+				print Display::Error("Sitekey Error\n"); 
+				continue;
 			}
 			
 			$r = Requests::post(host."firewall/verify",$this->headers(), http_build_query($data))[1];
@@ -115,19 +118,16 @@ class Bot {
 			if($timer){
 				Functions::Tmr($timer+5);
 			}
+			
 			$data = $scrap['input'];
-			if($scrap['captcha']){
-				$cap = $scrap['captcha']['g-recaptcha'];
-				if(substr($cap, 0 , 3) == "0x4"){
-					$data['captcha'] = "recaptchav2";
-					$cap = $this->captcha->Turnstile($cap, host);
-					$data['cf-turnstile-response']=$cap;
-					$data['g-recaptcha-response']=$cap;
-				}else{
-					print Display::Error("Sitekey Error\n"); 
-					continue;
-				}
+			if($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
+				$data['captcha'] = "turnstile";
+				$cap = $this->captcha->Turnstile($scrap['captcha']['mt-3 mb-3 cf-turnstile'], host);
+				$data['cf-turnstile-response']=$cap;
 				if(!$cap)continue;
+			}else{
+				print Display::Error("Sitekey Error\n"); 
+				continue;
 			}
 			$data = http_build_query($data);
 			$r = Requests::post(host."ptc/verify/".$id,$this->headers(), $data)[1];
@@ -147,17 +147,16 @@ class Bot {
 				print Display::Error("no respon".n);
 				Display::Line();
 			}
-			
 		}
-		print Display::Error("Ptc has finisghed\n");
+		print Display::Error("Ptc has finished\n");
 		Display::Line();
 	}
-	private function faucet(){
+	private function faucet($xxx){
 		while(true){
-			$r = Requests::get(host."faucet",$this->headers())[1];
+			$r = Requests::get(host.$xxx,$this->headers())[1];
 			$scrap = $this->scrap->Result($r);
-			
 			if($scrap['locked']){
+				print Display::Error("Account Locked\n");
 				$tmr = explode('">',explode('<span class="counter" wait="',$r)[1])[0];
 				if($tmr){
 					Functions::Tmr($tmr+5);
@@ -180,35 +179,31 @@ class Bot {
 				Functions::Tmr($tmr);
 				continue;
 			}
-			if( !$scrap['title'] || preg_match('/Home/',$scrap['title'])){
-				sleep(3);
-				continue;
-			}
 			$limit = $scrap['faucet'][1][0];
 			if($limit < 1)break;
 			$data = $scrap['input'];
 			if(explode('rel=\"',$r)[1]){
+				if($sitekey_error){
+					print Display::Error("sepertinya captcha update\n");
+					exit;
+				}
 				$antibot = $this->captcha->AntiBot($r);
-				//$antibot = $this->iewil->AntiBot($r);
 				if(!$antibot)continue;
 				$data['antibotlinks'] = str_replace("+"," ",$antibot);
 			}
 			
-			if($scrap['captcha']){
-				$cap = $scrap['captcha']['g-recaptcha'];
-				if(substr($cap, 0 , 3) == "0x4"){
-					$data['captcha'] = "recaptchav2";
-					$cap = $this->captcha->Turnstile($cap, host);
-					$data['cf-turnstile-response']=$cap;
-					$data['g-recaptcha-response']=$cap;
-				}else{
-					print Display::Error("Sitekey Error\n"); 
-					continue;
-				}
+			if($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
+				$data['captcha'] = "turnstile";
+				$cap = $this->captcha->Turnstile($scrap['captcha']['mt-3 mb-3 cf-turnstile'], host);
+				$data['cf-turnstile-response']=$cap;
 				if(!$cap)continue;
+			}else{
+				$sitekey_error = true;
+				print Display::Error("Sitekey Error\n"); 
+				continue;
 			}
 			$data = http_build_query($data);
-			$r = Requests::post(host."faucet/verify",$this->headers(), $data)[1];
+			$r = Requests::post(host.$xxx."/verify",$this->headers(), $data)[1];
 			$wr = explode('</div>', explode('<i class="fas fa-exclamation-circle"></i> ',$r)[1])[0];//Invalid Anti-Bot Links
 			preg_match("/Swal\.fire\('([^']*)', '([^']*)', '([^']*)'\)/", $r, $matches);
 			
@@ -223,11 +218,13 @@ class Bot {
 				print Display::Error($wr.n);
 				Display::Line();
 			}else{
+				//print_r($r);exit;
 				print Display::Error("no respon".n);
 				Display::Line();
 			}
 		}
 		print Display::Error("Limit faucet\n");
 	}
+	
 }
 new Bot();
