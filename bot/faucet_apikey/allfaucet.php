@@ -57,6 +57,7 @@ class Bot {
 			print "\r                              \r";
 			if($this->check_code($response))return $response;
 			$body = strtolower($response[1]);
+			if(preg_match('/just a moment.../', $body))return $response;
 			$title = explode('</title>', explode('<title>', $body)[1])[0];
 			if($title){
 				print Display::Error($title);
@@ -76,6 +77,7 @@ class Bot {
 			print "\r                              \r";
 			if($this->check_code($response))return $response;
 			$body = strtolower($response[1]);
+			if(preg_match('/just a moment.../', $body))return $response;
 			$title = explode('</title>', explode('<title>', $body)[1])[0];
 			if($title){
 				print Display::Error($title);
