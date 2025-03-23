@@ -85,8 +85,6 @@ class Bot {
 				sleep(3);
 				print "\r                              \r";
 				continue;
-			}else{
-				print_r($data);
 			}
 			$data = http_build_query($data);
 			$r = Requests::post(host."faucet/verify", $this->headers(), $data)[1];

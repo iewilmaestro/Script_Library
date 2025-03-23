@@ -27,6 +27,7 @@ class Bot {
 		if(!$r["username"]){
 			print Display::Error("Autorization expired\n");
 			Functions::removeConfig("Autorization");
+			Functions::removeConfig("cookie");
 			Display::Line();
 			goto cookie;
 		}
@@ -42,6 +43,7 @@ class Bot {
 		$_id = $list_faucet[$pil]['_id'];
 		if($this->claim($_id, $pil)){
 			Functions::removeConfig("Autorization");
+			Functions::removeConfig("cookie");
 			Display::Line();
 			goto cookie;
 		}
@@ -74,11 +76,11 @@ class Bot {
 			if($r["msg"] == "You can start antibot challenge"){
 				
 			}else{
-				print_r($r);exit;
+				print Display::Error($r["msg"].n);
+				return 500;
 			}
 			$r = json_decode(Requests::post(host.'Antibot/Start-Challenge', $this->headers())[1],1);
 			$gif = $r["antibot"]["challenge"];
-			
 			$cap = $this->iewil->AntibotGif($gif);
 			if(!$cap)continue;
 			sleep(3);
@@ -100,6 +102,7 @@ class Bot {
 			
 			$antibot = $this->Antibot();
 			if(!$antibot)continue;
+			if($antibot == 500)return 1;
 			$data = '{"currency":"'.$id.'","antibotVerifiedResponse":"'.$antibot.'"}';
 			$r = json_decode(Requests::post(host.'Faucet/Claim-Faucet', $this->headers(), $data)[1],1);
 			if($r["type"] == "success"){

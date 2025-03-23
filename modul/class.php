@@ -362,6 +362,7 @@ class Iewil {
 	}
 	private function getResult($postParameter){
 		$r = json_decode($this->requests($postParameter),1);
+		//print_r($r);
 		if($r && $r['status']){
 			return $r['result'];
 		}

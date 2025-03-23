@@ -133,6 +133,11 @@ class Bot {
 			}
 			
 			$r = Requests::post(host."faucet/verify", $this->headers(),$data)[1];
+			if(preg_match('/Just a moment/',$r)){
+				print Display::Error(host."faucet/verify\n");
+				print Display::Error("Cloudflare\n");
+				return 1;
+			}
 			$tmr = explode('-',explode('let wait = ',$r)[1])[0];
 			$ss = explode('has',explode("text: '",$r)[1])[0];
 			$r = $this->Dashboard();
