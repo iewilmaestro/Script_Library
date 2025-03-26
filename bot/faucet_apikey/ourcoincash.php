@@ -43,6 +43,11 @@ class Bot {
 			Functions::removeConfig("cookie");
 			goto cookie;
 		}
+		if($this->ClaimWithEnergy()){
+			Functions::removeConfig("cookie");
+			goto cookie;
+		}
+		
 	}
 	private function headers($xml=0){
 		$h[] = "Host: ".parse_url(host)['host'];
@@ -54,6 +59,7 @@ class Bot {
 	private function Dashboard(){
 		$r = Requests::get(host."dashboard",$this->headers())[1];
 		$data['bal'] = explode('</p>', explode('<i class="fas fa-coins"></i> ', $r)[1])[0];
+		$data['energy'] = preg_replace("/[^0-9]/", "", explode('</p>', explode('<i class="fas fa-bolt"></i>', $r)[1])[0]);
 		return $data;
 	}
 	private function Ptc(){
@@ -150,6 +156,49 @@ class Bot {
 			}else{
 				print Display::Error("Not found\n");
 				Display::Cetak("Limit",$sisa."/".$limit);
+				Display::Cetak("Blanace",$r['bal']);
+				Display::Line();
+			}
+			if($tmr){Functions::tmr($tmr);}
+		}
+	}
+	private function ClaimWithEnergy(){
+		$r = $this->Dashboard();
+		$energy = $r['energy'];
+		while(true){
+			if($energy < 10)break;
+			$r = Requests::get(host."faucet",$this->headers())[1];
+			if(preg_match('/Just a moment/',$r)){print Display::Error("Cloudflare\n");return 1;}
+			$csrf = explode('"',explode('id="token" value="',$r)[1])[0];
+			$token = explode('"',explode('name="token" value="',$r)[1])[0];
+			
+			if(explode('rel=\"',$r)[1]){
+				$antibot = $this->iewil->AntiBot($r);
+				if(!$antibot)continue;
+				$data = "antibotlinks=$antibot&csrf_token_name=".$csrf."&token=".$token;
+			}else{
+				$data = "csrf_token_name=".$csrf."&token=".$token;
+			}
+			
+			$r = Requests::post(host."faucet/verify", $this->headers(),$data)[1];
+			if(preg_match('/Just a moment/',$r)){
+				print Display::Error(host."faucet/verify\n");
+				print Display::Error("Cloudflare\n");
+				return 1;
+			}
+			$tmr = explode('-',explode('let wait = ',$r)[1])[0];
+			$ss = explode('has',explode("text: '",$r)[1])[0];
+			$r = $this->Dashboard();
+			$energy = $r['energy'];
+			if($ss){
+				print Display::Sukses($ss);
+				Display::Cetak("Energy",$energy);
+				Display::Cetak("Blanace",$r['bal']);
+				Display::Cetak("Apikey",$this->captcha->getBalance());
+				Display::Line();
+			}else{
+				print Display::Error("Not found\n");
+				//Display::Cetak("Limit",$sisa."/".$limit);
 				Display::Cetak("Blanace",$r['bal']);
 				Display::Line();
 			}
