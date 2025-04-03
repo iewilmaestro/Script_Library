@@ -89,6 +89,12 @@ class Bot {
 			$data = http_build_query($data);
 			$r = Requests::post(host."faucet/verify", $this->headers(), $data)[1];
 			$scrap = $this->scrap->Result($r);
+			/*
+			$wr = explode('</div>', explode('<div class="alert text-center alert-info"><i class="fas fa-exclamation-circle"></i> ', $r)[1])[0];//After every 30 faucet claims, 1 Shortlink must be completed to continue again! if you already claimed shortlinks so you receive 30 faucet claim every shortLinks claim 👍 
+			if(preg_match('/Shortlink/', $wr)){
+				print Display::Error(str_replace(",","\n",$wr));
+				exit;
+			}*/
 			preg_match('/Toast\.fire\(\s*{\s*icon:\s*"([^"]*)"\s*,\s*title:\s*"([^"]*)"\s*}\s*\);/', $r, $matches);
 			if($matches[1] == 'success'){
 				Display::Cetak('Limit', $scrap['faucet'][0][0]);
@@ -99,6 +105,7 @@ class Bot {
 			}else{
 				print Display::Error("no respon".n);
 				Display::Line();
+				exit;
 			}
 		}
 		print Display::Error("Faucet Finished\n");

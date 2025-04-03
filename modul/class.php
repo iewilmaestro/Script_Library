@@ -339,15 +339,17 @@ class Captcha {
 }
 
 class Iewil {
-	protected $url;
 	function __construct(){
-		$this->url = "https://iewilbot.my.id/res.php";
+		$this->res = "https://iewilbot.my.id/api/res.php";
+		$this->req = "https://iewilbot.my.id/api/req.php";
 	}
-	private function requests($postParameter){
-		$ch = curl_init($this->url);
+	private function requests($url, $postParameter = 0){
+		$ch = curl_init($url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postParameter);
+		if($postParameter){
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $postParameter);
+		}
 		$response = curl_exec($ch);
 		if(!curl_errno($ch)) {
 			switch ($http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) {
@@ -361,21 +363,42 @@ class Iewil {
 		return $response;
 	}
 	private function getResult($postParameter){
-		$r = json_decode($this->requests($postParameter),1);
-		//print_r($r);
-		if($r && $r['status']){
-			return $r['result'];
-		}
-		if($r["msg"]){
-			print Display::Error(substr($r["msg"],0,30));
+		$r = json_decode($this->requests($this->req ,$postParameter),1);
+		if($r["request_id"]){
+			$request_id = $r["request_id"];
+		}else{
+			print Display::Error($r["message"]);
 			sleep(2);
 			print "\r                                      \r";
 		}
-		
+		//for ($counter = 0; $counter < 20; $counter++) {
+		$counter = 0;
+		while(true){
+			$r = json_decode($this->requests($this->res . "?request_id=".  $request_id),1);
+			print "\r                                      \r";
+			if($r["status"]){
+				print "bypassed";
+				sleep(3);
+				print "\r                                      \r";
+				return json_decode($r['result'], 1);
+			}elseif($r["message"] == "being bypassed"){
+				print $counter." being bypassed";
+				sleep(5);
+			}elseif($r["message"] == "gagal"){
+				break;
+			}elseif($r["message"] == "request_id not found"){
+				break;
+			}else{
+				break;
+			}
+			// jika while
+			$counter++;
+		}
+		//print "iewilbot say captcha can't be solve";
 		print Display::Error("iewilbot say captcha can't be solve");
 		sleep(2);
 		print "\r                                          \r";
-		
+		return;
 	}
 	public function IconCoordiant($base64Img){
 		$postParameter = http_build_query([
@@ -431,18 +454,18 @@ class Iewil {
 		}
 		$postParameter = http_build_query($data);
 		$res = $this->getResult($postParameter);
+		
 		unset($data["apikey"]);
 		unset($data["method"]);
 		unset($data["main"]);
-		if(isset($res["solution"])){
-			$cap = $res["solution"];
-			$cek = explode(",", $cap);
+		if($res){
+			$cek = explode(",", $res);
 			for($i=0;$i<count($data);$i++){
 				if(!$cek[$i]){
 					return;
 				}
 			}
-			return " ".str_replace(","," ",$cap);
+			return " ".str_replace(","," ",$res);
 		}
 	}
 }

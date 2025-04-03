@@ -127,16 +127,19 @@ class Bot {
 				Display::Line();
 				return;
 			}
-			$csrf = explode('"',explode('id="token" value="',$r)[1])[0];
-			$token = explode('"',explode('name="token" value="',$r)[1])[0];
+			$data = [];
+			$data['csrf_token_name'] = explode('"',explode('id="token" value="',$r)[1])[0];
+			$data['token'] = explode('"',explode('name="token" value="',$r)[1])[0];
 			
 			if(explode('rel=\"',$r)[1]){
 				$antibot = $this->iewil->AntiBot($r);
 				if(!$antibot)continue;
-				$data = "antibotlinks=$antibot&csrf_token_name=".$csrf."&token=".$token;
-			}else{
-				$data = "csrf_token_name=".$csrf."&token=".$token;
+				$data["antibotlinks"] = $antibot;
 			}
+			if(!$data){
+				continue;
+			}
+			$data = http_build_query($data);
 			
 			$r = Requests::post(host."faucet/verify", $this->headers(),$data)[1];
 			if(preg_match('/Just a moment/',$r)){
@@ -169,17 +172,19 @@ class Bot {
 			if($energy < 10)break;
 			$r = Requests::get(host."faucet",$this->headers())[1];
 			if(preg_match('/Just a moment/',$r)){print Display::Error("Cloudflare\n");return 1;}
-			$csrf = explode('"',explode('id="token" value="',$r)[1])[0];
-			$token = explode('"',explode('name="token" value="',$r)[1])[0];
+			$data = [];
+			$data['csrf_token_name'] = explode('"',explode('id="token" value="',$r)[1])[0];
+			$data['token'] = explode('"',explode('name="token" value="',$r)[1])[0];
 			
 			if(explode('rel=\"',$r)[1]){
 				$antibot = $this->iewil->AntiBot($r);
 				if(!$antibot)continue;
-				$data = "antibotlinks=$antibot&csrf_token_name=".$csrf."&token=".$token;
-			}else{
-				$data = "csrf_token_name=".$csrf."&token=".$token;
+				$data["antibotlinks"] = $antibot;
 			}
-			
+			if(!$data){
+				continue;
+			}
+			$data = http_build_query($data);
 			$r = Requests::post(host."faucet/verify", $this->headers(),$data)[1];
 			if(preg_match('/Just a moment/',$r)){
 				print Display::Error(host."faucet/verify\n");

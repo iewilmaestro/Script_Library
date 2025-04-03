@@ -56,7 +56,7 @@ class Bot {
 	}
 	private function Dashboard(){
 		$r = Requests::get(host, $this->headers())[1];
-		$user = explode('<',explode('<a href="/notifications.html" class="notification"></a>', $r)[1])[0];
+		$user = explode('<',explode('</a>',explode('<a href="/notifications.html" class="notification', $r)[1])[1])[0];
 		$balance = trim(explode('</b>', explode('Account Balance <div class="text-warning"><b>', $r)[1])[0]);
 		$coins = trim(explode('</b>', explode('Current Coins Value <div class="text-warning"><b>', $r)[1])[0]);
 		return ['username'=> $user,'balance' => $balance."/".$coins];
