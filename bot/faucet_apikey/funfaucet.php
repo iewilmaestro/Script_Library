@@ -43,28 +43,16 @@ class Bot {
 		*/
 		// 5000 = cloudflare
 		// 4999 = limit
-		$claim_faucet = [
-			"faucet",
-			"madfaucet"
-		];
 		while(true){
-			if($claim_faucet[0] == "faucet"){
-				$faucet = $this->faucet($claim_faucet[0]);
-				if($faucet == 4999){
-					unset($claim_faucet[0]);
-				}
-				sleep(5);
-			}
-			$madFaucet = $this->faucet($claim_faucet[1]);
-			if($faucet && $madFaucet){
-				$for = floor($faucet/$madFaucet);
-				for($i = 0; $i < $for; $i ++){
-					$madFaucet = $this->faucet("madfaucet");
-					Functions::Tmr($madFaucet);
-				}
-			}
+			$faucet = $this->faucet("faucet");
+			sleep(5);
+			$madFaucet = $this->faucet("madfaucet");
+			$timer = min([$faucet, $madFaucet]);
+			if($timer == 1000)break;
+			Functions::Tmr($timer);
 		}
-		
+		print Display::Error("Limit faucet reach\n");
+		Display::Line();
 	}
 	
 	public function headers($data=0){
@@ -180,6 +168,9 @@ class Bot {
 		$tmr = 0;
 		while(true){
 			$r = Requests::get(host.$xxx,$this->headers())[1];
+			if(preg_match('/Daily limit reached/', $r)){
+				return 1000;
+			}
 			$scrap = $this->scrap->Result($r);
 			if($scrap['locked']){
 				print Display::Error("Account Locked\n");
