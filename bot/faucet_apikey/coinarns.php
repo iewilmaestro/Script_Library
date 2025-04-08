@@ -15,7 +15,6 @@ class Bot {
 		Display::Line();
 		$this->cookie = Functions::setConfig("cookie");
 		$this->uagent = Functions::setConfig("user_agent");
-		$this->iewil = new Iewil();
 		$this->scrap = new HtmlScrap();
 		$this->captcha = new Captcha();
 		
@@ -205,7 +204,7 @@ class Bot {
 			}elseif($scrap['captcha']['g-recaptcha']){
 				$data['captcha'] = "recaptchav2";
 				if($scrap['captcha']['g-recaptcha'] == "0x4AAAAAAA29qvbpeLrnUUhC"){
-					$cap = $this->iewil->Turnstile($scrap['captcha']['g-recaptcha'], host);
+					$cap = $this->captcha->Turnstile($scrap['captcha']['g-recaptcha'], host);
 					$data['cf-turnstile-response']=$cap;
 					$data['g-recaptcha-response']=$cap;
 				}else{
@@ -247,81 +246,5 @@ class Bot {
 		}
 		print Display::Error("Limit faucet\n");
 	}
-	private function iconBypass($token, $url = host."icaptcha/req", $theme = "light"){
-		
-		$icon_header = $this->headers();
-		$icon_header[] = "origin: ".host;
-		$icon_header[] = "x-iconcaptcha-token: ".$token;
-		$icon_header[] = "x-requested-with: XMLHttpRequest";
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$widgetID = $this->widgetId();
-		
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"	=> $widgetID,
-				"action" 	=> "LOAD",
-				"theme" 	=> $theme,
-				"token" 	=> $token,
-				"timestamp"	=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url, $icon_header, $data)[1]),1);
-		$base64Image = $r["challenge"];
-		$challengeId = $r["identifier"];
-		if(!$base64Image || !$challengeId){
-			return;
-		}
-		$cap = $this->iewil->IconCoordiant($base64Image);
-		if(!$cap['x'])return;
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"		=> $widgetID,
-				"challengeId"	=> $challengeId,
-				"action"		=> "SELECTION",
-				"x"				=> $cap['x'],
-				"y"				=> 24,
-				"width"			=> 320,
-				"token" 		=> $token,
-				"timestamp"		=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url,$icon_header, $data)[1]),1);
-		if(!$r['completed']){
-			return;
-		}
-		$data = [];
-		$data['captcha'] = "icaptcha";
-		$data['_iconcaptcha-token']=$token;
-		$data['ic-rq']=1;
-		$data['ic-wid'] = $widgetID;
-		$data['ic-cid'] = $challengeId;
-		$data['ic-hp'] = '';
-		return $data;
-	}
-	private function widgetId() {
-		$uuid = '';
-		for ($n = 0; $n < 32; $n++) {
-			if ($n == 8 || $n == 12 || $n == 16 || $n == 20) {
-				$uuid .= '-';
-			}
-			$e = mt_rand(0, 15);
-
-			if ($n == 12) {
-				$e = 4;
-			} elseif ($n == 16) {
-				$e = ($e & 0x3) | 0x8;
-			}
-			$uuid .= dechex($e);
-		}
-		return $uuid;
-	}
-	
 }
 new Bot();

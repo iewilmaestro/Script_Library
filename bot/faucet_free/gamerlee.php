@@ -2,8 +2,8 @@
 
 const
 versi = "0.0.1",
-host = "https://satoshifaucet.io/",
-refflink = "https://satoshifaucet.io/?r=8841",
+host = "https://gamerlee.com/",
+refflink = "https://gamerlee.com/?r=8137",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
@@ -17,7 +17,6 @@ class Bot {
 		$this->cookie = Functions::setConfig("cookie");
 		$this->uagent = Functions::setConfig("user_agent");
 		$this->iewil = new Iewil();
-		$this->captcha = new Captcha();
 		$this->scrap = new HtmlScrap();
 		
 		
@@ -30,12 +29,11 @@ class Bot {
 			Display::Line();
 			goto cookie;
 		}
-			
-		Display::Cetak("Apikey",$this->captcha->getBalance());
+		Display::Cetak("ReffId", $r);
 		Display::Line();
 		select_coin:
-		$r = Requests::get(host,$this->headers())[1];
-		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/faucet\/currency\/([a-zA-Z0-9]+)#', $r, $matches);
+		$r = Requests::get(host."app/dashboard",$this->headers())[1];
+		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/app\/faucet\?currency=([a-zA-Z0-9]+)#', $r, $matches);
 		$this->coins = $matches[1];
 		foreach($this->coins as $num => $coins){
 			Display::Menu(($num+1), strtoupper($coins));
@@ -75,7 +73,7 @@ class Bot {
 	private function check($r){
 		$scrap = $this->scrap->Result($r);
 		if($scrap['cloudflare']){
-			print Display::Error("https://satoshifaucet.io/links/currency/ltc\n");
+			print Display::Error("https://gamerlee.com/app/links?currency=LTC\n");
 			print Display::Error("Cloudflare Detect\n");
 			Display::Line();
 			return 1;
@@ -90,9 +88,9 @@ class Bot {
 	}
 	
 	public function Dashboard(){
-		$r = Requests::get(host."referrals",$this->headers())[1];
+		$r = Requests::get(host."app/dashboard",$this->headers())[1];
 		$this->check($r);
-		$refId = explode('"', explode('value="https://satoshifaucet.io/?r=', $r)[1])[0];
+		$refId = explode('"', explode('value="https://gamerlee.com/?r=', $r)[1])[0];
 		return $refId;
 	}
 	public function Firewall(){
@@ -129,12 +127,13 @@ class Bot {
 				return 1;
 			}
 			foreach($coins as $a => $coin){
-				$r = Requests::get(host."faucet/currency/".$coin,$this->headers())[1];
+				$r = Requests::get(host."app/faucet?currency=".$coin,$this->headers())[1];
 				$scrap = $this->scrap->Result($r);
 				if($scrap['firewall']){
 					print Display::Error("Firewall Detect\n");
-					$this->Firewall();
-					continue;
+					//$this->Firewall();
+					//continue;
+					exit;
 				}
 				if($scrap['cloudflare']){
 					print Display::Error(host."faucet/currency/".$coin.n);
@@ -200,13 +199,15 @@ class Bot {
 					continue;
 				}
 				$data = http_build_query($data);
-				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
-				preg_match("/Swal\.fire\(\s*{\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*html:\s*'([^']+)'/", $r, $matches);
+				$r = Requests::post(host."app/faucet/verify?currency=".$coin,$this->headers(), $data)[1];
+				//preg_match("/Toast\.fire\(\s*{\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*text:\s*'([^']+)'/", $r, $matches);
+				preg_match("/Toast\.fire\({\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*text:\s*'([^']+)'/", $r, $matches);
 				$scrap = $this->scrap->Result($r);
 				if($scrap['firewall']){
 					print Display::Error("Firewall Detect\n");
-					$this->Firewall();
-					continue;
+					//$this->Firewall();
+					//continue;
+					exit;
 				}
 				if(preg_match('/Invalid API Key used/',$r)){
 					unset($coins[$a]);
@@ -215,7 +216,6 @@ class Bot {
 					continue;
 				}
 				$ban = explode('</div>',explode('<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account',$r)[1])[0];
-				
 				if($ban){
 					print Display::Error("Your account".$ban.n);
 					exit;
@@ -237,14 +237,13 @@ class Bot {
 					continue;
 				}
 				
-				if($matches[2] == "Success!"){
+				if($matches[1] == "success"){
 					Display::Cetak($coin," ");
 					print Display::Sukses($matches[3]);
-					Display::Cetak("Apikey",$this->captcha->getBalance());
 					Display::Line();
 				}else{ 
 					print Display::Error($matches[3]);
-					if(preg_match('/ShortLinks/',$matches[3])){
+					if(preg_match('/Shortlink/',$matches[3])){
 						print n;
 						Display::Line();
 						exit;

@@ -18,7 +18,7 @@ class Bot {
 		$this->uagent = Functions::setConfig("user_agent");
 		Functions::view();
 		
-		$this->iewil = new Iewil();
+		$this->captcha = new Captcha();
 		$this->scrap = new HtmlScrap();
 		
 		Display::Ban(title, versi);
@@ -92,13 +92,13 @@ class Bot {
 			$postCsrf = json_decode(Requests::post(host."request/csrf", $this->headers(),1)[1],1);
 			$csrfCLaim = $postCsrf["csrf_token"];
 			
-			$antibotlinks = $this->iewil->Antibot($r);
+			$antibotlinks = $this->captcha->Antibot($r);
 			if(!$antibotlinks)continue;
 			$antibotlinks = str_replace(" ", "+", $antibotlinks);
 			
 			$turnstile_sitekey = explode('"', explode('<div class="cf-turnstile mb-2" data-sitekey="', $r)[1])[0];
 			if($turnstile_sitekey){
-				$turnstile = $this->iewil->Turnstile($turnstile_sitekey, "https://aruble.net");
+				$turnstile = $this->captcha->Turnstile($turnstile_sitekey, "https://aruble.net");
 				if(!$turnstile)continue;
 				
 				$data = "antibotlinks=".$antibotlinks."&turnstile_response=".$turnstile."&paymethod=$payment_method&currselect=$currselect&csrftoken=".$csrfCLaim;
