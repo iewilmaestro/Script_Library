@@ -32,8 +32,15 @@ class Bot {
 		Display::Cetak("Balance",$r['balance']);
 		Display::Cetak("Apikey",$this->captcha->getBalance());
 		Display::Line();
+		
+		if($this->ptc()){ // iframe
+			Functions::removeConfig("cookie");
+			print Display::Error("Cookie Expired\n");
+			Display::Line();
+			goto cookie;
+		}
 		/*
-		if($this->ptc()){
+		if($this->ptc(1)){ // window
 			Functions::removeConfig("cookie");
 			print Display::Error("Cookie Expired\n");
 			Display::Line();
@@ -93,12 +100,17 @@ class Bot {
 			return;
 		}
 	}
-	private function ptc(){
+	private function ptc($window = 0){
+		if($window){
+			$url = host."ptc/window";
+		}else{
+			$url = host."ptc";
+		}
 		while(true){
-			$r = Requests::get(host."ptc",$this->headers())[1];
+			$r = Requests::get($url,$this->headers())[1];
 			$id = explode("'", explode("ptc/view/", $r)[1])[0];//3210'
 			if(preg_match('/Just a moment.../', $r)){
-				print Display::Error(host."faucet/currency/".$coin.n);
+				print Display::Error(host."ptc".n);
 				print Display::Error("Cloudflare Detect\n");
 				Display::Line();
 				return 1;
@@ -118,10 +130,16 @@ class Bot {
 				$icon = $this->iconBypass($scrap['input']['_iconcaptcha-token']);
 				if(!$icon)continue;
 				$data = array_merge($data, $icon);
-			}elseif($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
-				$data['captcha'] = "turnstile";
-				$cap = $this->captcha->Turnstile($scrap['captcha']['mt-3 mb-3 cf-turnstile'], host);
-				$data['cf-turnstile-response']=$cap;
+			}elseif($scrap['captcha']['g-recaptcha']){
+				$data['captcha'] = "recaptchav2";
+				if($scrap['captcha']['g-recaptcha'] == "0x4AAAAAAA29qvbpeLrnUUhC"){
+					$cap = $this->captcha->Turnstile($scrap['captcha']['g-recaptcha'], host);
+					$data['cf-turnstile-response']=$cap;
+					$data['g-recaptcha-response']=$cap;
+				}else{
+					$cap = $this->captcha->RecaptchaV2($scrap['captcha']['g-recaptcha'], host);
+					$data['g-recaptcha-response']=$cap;
+				}
 				if(!$cap)continue;
 			}else{
 				print Display::Error("Sitekey Error\n"); 

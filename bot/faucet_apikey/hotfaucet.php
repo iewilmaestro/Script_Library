@@ -73,7 +73,7 @@ class Bot {
 				goto das;
 			}
 		}
-		$bal = explode('</p>',explode('<p class="text-muted mb-0">', $r)[1])[0];
+		$bal = explode('</h4>',explode('<h4 class="mb-0">',explode('<p class="text-muted font-weight-medium">Balance</p>', $r)[1])[1])[0];
 		$username = explode('</span>',explode('<span class="d-none d-xl-inline-block ml-1" key="t-henry">', $r)[1])[0];
 		return ["username"=>$username, "balance"=>$bal];
 	}

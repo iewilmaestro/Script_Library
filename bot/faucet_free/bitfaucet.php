@@ -68,6 +68,11 @@ class Bot {
 				Display::Line();
 				return 1;
 			}
+			$available = explode('</b>', explode('<b class="mt-1 mb-2">Available faucet claim: ', $r)[1])[0];
+			if(!$available){
+				print Display::Error("After every 30 faucet claims,\n1 Shortlink must be completed to continue again!");
+				exit;
+			}
 			if($scrap['faucet'][1][0] < 1)break;
 			$tmr = explode('-', explode('var wait = ', $r)[1])[0];
 			if($tmr){

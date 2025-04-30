@@ -83,16 +83,15 @@ class Bot {
 			if($scrap['captcha']['cf-turnstile']){
 				$data['captcha'] = "turnstile";
 				$cap = $this->captcha->Turnstile($scrap['captcha']['cf-turnstile'], host."ptc/view/".$id);
+				if(!$cap)continue;
 				$data['cf-turnstile-response']=$cap;
 			}elseif($scrap['captcha']['g-recaptcha']){
 				$data['captcha'] = "recaptchav2";
 				$cap = $this->captcha->RecaptchaV2($scrap['captcha']['g-recaptcha'], host."ptc/view/".$id);
+				if(!$cap)continue;
 				$data['g-recaptcha-response'] = $cap;
-			}else{
-				print Display::Error("Sitekey Error\n"); 
-				continue;
 			}
-			if(!$cap)continue;
+			
 			if($tmr){
 				Functions::Tmr($tmr);
 			}
@@ -131,6 +130,7 @@ class Bot {
 			$data['csrf_token_name'] = explode('"',explode('id="token" value="',$r)[1])[0];
 			$data['token'] = explode('"',explode('name="token" value="',$r)[1])[0];
 			$recaptcha = explode('"', explode('<div class="g-recaptcha" data-sitekey="', $r)[1])[0];//6LfqFAcdAAAAAKWiUVv3EkT0le7pDL6lnsGfe5l6">
+			
 			if($recaptcha){
 				$cap = $this->iewil->RecaptchaV2($recaptcha, host);
 				if(!$cap)continue;
