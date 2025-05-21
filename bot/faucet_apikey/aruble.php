@@ -85,7 +85,7 @@ class Bot {
 			if($postAjaxClaim["status"] == "success"){
 				// jika sukses
 			}else{
-				print Display::Error("Cookie expired\n Run ulang untuk memperbarui cookie\n");
+				print Display::Error(strip_tags($postAjaxClaim["message"]).n);
 				return 1;
 			}
 			
@@ -94,15 +94,28 @@ class Bot {
 			
 			$antibotlinks = $this->captcha->Antibot($r);
 			if(!$antibotlinks)continue;
-			$antibotlinks = str_replace(" ", "+", $antibotlinks);
 			
+			$data = [];
+			$data["antibotlinks"] = $antibotlinks;
+			$data["paymethod"] = $payment_method;
+			$data["currselect"] = $currselect;
+			$data["csrftoken"] = $csrfCLaim;
+			$data["current_page"] = "https://aruble.net/earn/manualfaucet";
+
 			$turnstile_sitekey = explode('"', explode('<div class="cf-turnstile mb-2" data-sitekey="', $r)[1])[0];
+			$icon_token = explode("'", explode("<input type='hidden' name='_iconcaptcha-token' value='", $r)[1])[0];
+			if($icon_token){
+				$iconBypass = FreeCaptcha::iconBypass($icon_token, $this->headers(),"light", "IconCaptcha/examples/captcha-request.php");
+				$data = array_merge($data, $iconBypass);
+			}
+			
 			if($turnstile_sitekey){
 				$turnstile = $this->captcha->Turnstile($turnstile_sitekey, "https://aruble.net");
 				if(!$turnstile)continue;
 				
 				$data = "antibotlinks=".$antibotlinks."&turnstile_response=".$turnstile."&paymethod=$payment_method&currselect=$currselect&csrftoken=".$csrfCLaim;
 			}
+			
 			if(!$data)continue;
 			
 			//$recaptcha = $captcha->RecaptchaV2("6LeYAZ4aAAAAAITBD3YyMA6KTTLRSonhXHLLMIXW", "https://aruble.net");

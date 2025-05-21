@@ -334,7 +334,7 @@ class Captcha {
 			if(!$main)return 0;
 		}
 		if($this->provider == "xevil"){$data = "method=antibot&main=$main";}else{
-			$data["method"] = "antibot";$data["main"] = $main;}$src = explode('rel=\"',$source);foreach($src as $x => $sour){if($x == 0)continue;$no = explode('\"',$sour)[0];if($this->provider == "xevil"){$img = explode('\"',explode('data:image/png;base64,',$sour)[1])[0];$data .= "&$no=$img";}else{$img = explode('\"',explode('src=\"',$sour)[1])[0];$data[$no] = $img;}}if($this->provider == "xevil"){$res = $this->getResult($data, "POST");}else{$data = http_build_query($data);$ua = "Content-type: application/x-www-form-urlencoded";$res = $this->getResult($data, "POST", $ua);}if($res)return "+".str_replace(",","+",$res);return 0;}
+			$data["method"] = "antibot";$data["main"] = $main;}$src = explode('rel=\"',$source);foreach($src as $x => $sour){if($x == 0)continue;$no = explode('\"',$sour)[0];if($this->provider == "xevil"){$img = explode('\"',explode('data:image/png;base64,',$sour)[1])[0];$data .= "&$no=$img";}else{$img = explode('\"',explode('src=\"',$sour)[1])[0];$data[$no] = $img;}}if($this->provider == "xevil"){$res = $this->getResult($data, "POST");}else{$data = http_build_query($data);$ua = "Content-type: application/x-www-form-urlencoded";$res = $this->getResult($data, "POST", $ua);}if($res)return " ".str_replace(","," ",$res);return 0;}
 	public function Teaserfast($main, $small){if($this->provider == "multibot"){return ["error"=> true, "msg" => "not support key!"];}$data = http_build_query(["method" => "teaserfast","main_photo" => $main,"task" => $small]);$ua = "Content-type: application/x-www-form-urlencoded";return $this->getResult($data, "POST",$ua);}
 }
 
@@ -447,6 +447,91 @@ class Iewil {
 	}
 }
 class FreeCaptcha {
+	static function widgetId() {
+		$uuid = '';
+		for ($n = 0; $n < 32; $n++) {
+			if ($n == 8 || $n == 12 || $n == 16 || $n == 20) {
+				$uuid .= '-';
+			}
+			$e = mt_rand(0, 15);
+
+			if ($n == 12) {
+				$e = 4;
+			} elseif ($n == 16) {
+				$e = ($e & 0x3) | 0x8;
+			}
+			$uuid .= dechex($e);
+		}
+		return $uuid;
+	}
+	static function iconBypass($token, $icon_header, $theme = "light", $sub = "icaptcha/req"){
+		$icon_header[] = "origin: ".host;
+		$icon_header[] = "x-iconcaptcha-token: ".$token;
+		$icon_header[] = "x-requested-with: XMLHttpRequest";
+		
+		bypass_icon:
+		$timestamp = round(microtime(true) * 1000);
+		$initTimestamp = $timestamp - 2000;
+		$widgetID = self::widgetId();
+		
+		$data = ["payload" => 
+			base64_encode(json_encode([
+				"widgetId"	=> $widgetID,
+				"action" 	=> "LOAD",
+				"theme" 	=> $theme,
+				"token" 	=> $token,
+				"timestamp"	=> $timestamp,
+				"initTimestamp"	=> $initTimestamp
+			]))
+		];
+		sleep(2);
+		print "\r                        \r";
+		print "---[1] Bypass....";
+		$r = json_decode(base64_decode(Requests::post(host.$sub,$icon_header, $data)[1]),1);
+		$base64Image = $r["challenge"];
+		$challengeId = $r["identifier"];
+		
+		$timestamp = round(microtime(true) * 1000);
+		$initTimestamp = $timestamp - 2000;
+		$data = ["payload" => 
+			base64_encode(json_encode([
+				"widgetId"		=> $widgetID,
+				"challengeId"	=> $challengeId,
+				"action"		=> "SELECTION",
+				"x"				=> 160,
+				"y"				=> 24,
+				"width"			=> 320,
+				"token" 		=> $token,
+				"timestamp"		=> $timestamp,
+				"initTimestamp"	=> $initTimestamp
+			]))
+		];
+		sleep(2);
+		print "\r                        \r";
+		print "---[2] Bypass..";
+		$r = json_decode(base64_decode(Requests::post(host.$sub,$icon_header, $data)[1]),1);
+		if(!$r['completed']){
+			sleep(2);
+			print "\r                        \r";
+			print "---[3] Bypass failed";
+			sleep(2);
+			print "\r                        \r";
+			goto bypass_icon;
+		}
+		sleep(2);
+		print "\r                        \r";
+		print "---[3] Bypass success";
+		sleep(2);
+		print "\r                        \r";
+		$data = [];
+		$data['captcha'] = "icaptcha";
+		$data['_iconcaptcha-token']=$token;
+		$data['ic-rq']=1;
+		$data['ic-wid'] = $widgetID;
+		$data['ic-cid'] = $challengeId;
+		$data['ic-hp'] = '';
+		return $data;
+	}
 	static function Icon_hash($header){
 		$url = host.'system/libs/captcha/request.php';
 		$data["method"] = "icon_hash";

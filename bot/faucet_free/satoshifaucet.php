@@ -34,7 +34,17 @@ class Bot {
 		select_coin:
 		$r = Requests::get(host,$this->headers())[1];
 		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/faucet\/currency\/([a-zA-Z0-9]+)#', $r, $matches);
-		$this->coins = $matches[1];
+		$temp = [];
+		$result = [];
+
+		foreach ($matches[1] as $item) {
+			$lower = strtolower($item);
+			if (!in_array($lower, $temp)) {
+				$temp[] = $lower;
+				$match[] = $item;
+			}
+		}
+		$this->coins = $match;
 		foreach($this->coins as $num => $coins){
 			Display::Menu(($num+1), strtoupper($coins));
 			$all_coin[$num+1][0] = $coins;
@@ -181,7 +191,7 @@ class Bot {
 					exit;
 				}
 				if($scrap['input']['_iconcaptcha-token']){
-					$icon = $this->iconBypass($scrap['input']['_iconcaptcha-token']);
+					$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
 					if(!$icon)continue;
 					$data = array_merge($data, $icon);
 				}
@@ -251,77 +261,6 @@ class Bot {
 				return;
 			}
 		}
-	}
-	private function widgetId() {
-		$uuid = '';
-		for ($n = 0; $n < 32; $n++) {
-			if ($n == 8 || $n == 12 || $n == 16 || $n == 20) {
-				$uuid .= '-';
-			}
-			$e = mt_rand(0, 15);
-
-			if ($n == 12) {
-				$e = 4;
-			} elseif ($n == 16) {
-				$e = ($e & 0x3) | 0x8;
-			}
-			$uuid .= dechex($e);
-		}
-		return $uuid;
-	}
-	private function iconBypass($token){
-		$icon_header = $this->headers();
-		$icon_header[] = "origin: ".host;
-		$icon_header[] = "x-iconcaptcha-token: ".$token;
-		$icon_header[] = "x-requested-with: XMLHttpRequest";
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$widgetID = $this->widgetId();
-		
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"	=> $widgetID,
-				"action" 	=> "LOAD",
-				"theme" 	=> "light",
-				"token" 	=> $token,
-				"timestamp"	=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post(host."icaptcha/req",$icon_header, $data)[1]),1);
-		$base64Image = $r["challenge"];
-		$challengeId = $r["identifier"];
-		$cap = $this->iewil->IconCoordiant($base64Image);
-		if(!$cap['x'])return;
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"		=> $widgetID,
-				"challengeId"	=> $challengeId,
-				"action"		=> "SELECTION",
-				"x"				=> $cap['x'],
-				"y"				=> 24,
-				"width"			=> 320,
-				"token" 		=> $token,
-				"timestamp"		=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post(host."icaptcha/req",$icon_header, $data)[1]),1);
-		if(!$r['completed']){
-			return;
-		}
-		$data = [];
-		$data['captcha'] = "icaptcha";
-		$data['_iconcaptcha-token']=$token;
-		$data['ic-rq']=1;
-		$data['ic-wid'] = $widgetID;
-		$data['ic-cid'] = $challengeId;
-		$data['ic-hp'] = '';
-		return $data;
 	}
 }
 new Bot();

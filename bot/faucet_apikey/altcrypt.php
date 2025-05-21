@@ -20,7 +20,6 @@ class Bot {
 		Functions::view();
 		
 		$this->captcha = new Captcha();
-		$this->iewil = new Iewil();
 		$this->scrap = new HtmlScrap();
 		
 		Display::Ban(title, versi);
