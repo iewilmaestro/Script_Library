@@ -183,7 +183,7 @@ class Bot {
 			$data['token'] = explode('"',explode('name="token" value="',$r)[1])[0];
 			
 			if(explode('rel=\"',$r)[1]){
-				$antibot = $this->iewil->AntiBot($r);
+				$antibot = $this->captcha->AntiBot($r);
 				if(!$antibot)continue;
 				$data["antibotlinks"] = $antibot;
 			}
