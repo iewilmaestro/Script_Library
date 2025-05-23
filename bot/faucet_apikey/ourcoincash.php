@@ -132,13 +132,13 @@ class Bot {
 			$recaptcha = explode('"', explode('<div class="g-recaptcha" data-sitekey="', $r)[1])[0];//6LfqFAcdAAAAAKWiUVv3EkT0le7pDL6lnsGfe5l6">
 			
 			if($recaptcha){
-				$cap = $this->iewil->RecaptchaV2($recaptcha, host);
+				$cap = $this->captcha->RecaptchaV2($recaptcha, host);
 				if(!$cap)continue;
 				$data["captcha"] = "recaptchav2";
 				$data["g-recaptcha-response"] = $cap; 
 			}
 			if(explode('rel=\"',$r)[1]){
-				$antibot = $this->iewil->AntiBot($r);
+				$antibot = $this->captcha->AntiBot($r);
 				if(!$antibot)continue;
 				$data["antibotlinks"] = $antibot;
 			}

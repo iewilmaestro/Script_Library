@@ -447,6 +447,10 @@ class Iewil {
 	}
 }
 class FreeCaptcha {
+	static function Antibot($source){
+		$src = explode('rel=\"',$source);
+		print_r($src);exit;
+	}
 	static function widgetId() {
 		$uuid = '';
 		for ($n = 0; $n < 32; $n++) {
@@ -532,6 +536,7 @@ class FreeCaptcha {
 		$data['ic-hp'] = '';
 		return $data;
 	}
+	
 	static function Icon_hash($header){
 		$url = host.'system/libs/captcha/request.php';
 		$data["method"] = "icon_hash";

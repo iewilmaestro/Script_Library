@@ -36,9 +36,10 @@ class Bot{
 		Display::Cetak("User ID",$r["user"]);
 		Display::Cetak("Balance",$r["balance"]);
 		Display::Line();
-		$this->Claim();
+		$this->surf_ads();
+		$this->faucet();
 	}
-	public function headers($xml = 0){
+	private function headers($xml = 0){
 		$h[] = "Host: ".parse_url(host)['host'];
 		$h[] = "Upgrade-Insecure-Requests: 1";
 		$h[] = "Connection: keep-alive";
@@ -49,17 +50,22 @@ class Bot{
 		$h[] = "cookie: ".$this->cookie;
 		return $h;
 	}
-	public function Dashboard(){
+	private function Dashboard(){
 		$r = Requests::get(host."dashboard.php",$this->headers())[1];
 		$user = explode('</strong>',explode('Your id: <strong>',$r)[1])[0];
 		$bal = explode('</h3>', explode('<h3 class="text-center">',explode('<h6>Acc Balance <strong>ŁTC</strong>',$r)[1])[1])[0];
 		return ["user"=>$user,"balance"=>$bal];
 	}
-	public function Claim(){
+	private function surf_ads(){
 		while(true){
 			//$data = [];
 			$r = Requests::get(host."surf.php",$this->headers())[1];
 			$id = explode(';', explode('const adId = ', $r)[1])[0];//85;
+			if(!$id){
+				print Display::Error("Ads Finished\n");
+				Display::Line();
+				break;
+			}
 			/*
 			if(!preg_match("/Skip/",$r)){
 				print Display::Error("Ads Finished\n");
@@ -78,7 +84,28 @@ class Bot{
 			
 			$r = json_decode(Requests::post(host."surf.php",$this->headers(),$data)[1],1);
 			if($r["success"]){
+				Display::Cetak("Surf Ads","");
 				Display::Cetak("Success",$r["reward"]);
+				$r = $this->Dashboard();
+				Display::Cetak("Balance",$r["balance"]);
+				Display::Line();
+			}
+		}
+	}
+	private function faucet(){
+		while(true){
+			$r = Requests::get(host."faucet.php",$this->headers())[1];
+			$tmr = explode(';', explode('let cooldown = ', $r)[1])[0];//267;
+			if($tmr){Functions::tmr($tmr);continue;}
+			
+			$ad_timer = explode(',', explode('onclick="startTimer(', $r)[1])[0];//15, 4)">
+			$ad_id = trim(explode(')', explode(',', explode('onclick="startTimer(', $r)[1])[1])[0]);//15, 4)">
+			if($ad_timer){Functions::tmr($ad_timer);}
+			$data = "ad_id=".$ad_id;
+			$r = Requests::post(host."faucet_claim.php",$this->headers(),$data)[1];
+			if(preg_match("/You've earned/",$r)){
+				Display::Cetak("Faucet","");
+				Display::Cetak("Success",trim(explode('!',$r)[1]));
 				$r = $this->Dashboard();
 				Display::Cetak("Balance",$r["balance"]);
 				Display::Line();
