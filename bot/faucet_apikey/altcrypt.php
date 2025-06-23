@@ -159,7 +159,8 @@ class Bot {
 				}
 				if(!$cap)continue;
 				
-				$data = http_build_query($data);
+				if(is_array($data)){$data = http_build_query($data);}else{continue;}
+				
 				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
 				$ban = explode('</div>',explode('<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account',$r)[1])[0];
 				$ss = explode("'",explode("Swal.fire('Good job!', '",$r)[1])[0];
@@ -180,14 +181,14 @@ class Bot {
 				if($ss){
 					Display::Cetak($coin,($scrap['faucet'][1][0]-1)."/".$scrap['faucet'][2][0]);
 					print Display::Sukses("0.".str_replace("has been sent ","",strip_tags($ss)));
-					Display::Cetak("Bal_Api",$this->captcha->getBalance());
+					Display::Cetak("Apikey",$this->captcha->getBalance());
 					Display::Line();
 				}elseif($wr){
 					print Display::Error(substr($wr,0,30));
 					sleep(3);
 					print "\r                  \r";
 				}else{
-					print Display::Error("$coin: Server Down\n");
+					print Display::Error("$coin: Server Down");
 					sleep(3);
 					print "\r                  \r";
 				}

@@ -1,12 +1,5 @@
 <?php
 
-/*
-if (!defined('title') || title == "") {
-    define("title", "tronpayu");
-    require "../../modul/class.php";
-}
-*/
-
 const
 versi = "0.0.1",
 host = "https://tronpayu.io/",
@@ -105,7 +98,7 @@ class Bot {
 				exit;
 			}
 			if($token){
-				$data = $this->iconBypass($token, host."iconcaptcha.php");
+				$data = FreeCaptcha::iconBypass($token, $this->headers(), "light", "iconcaptcha.php");
 				if(!$data)continue;
 			}
 			unset($data["captcha"]);
@@ -114,7 +107,7 @@ class Bot {
 			$data["h-captcha-response"] = 'null';
 			$data["csrf_test_name"] = $this->csrf;
 			
-			$data = http_build_query($data);
+			if(is_array($data)){$data = http_build_query($data);}else{continue;}
 			$r = json_decode(Requests::post(host."process.php",array_merge($this->headers(),["x-requested-with: XMLHttpRequest"]), $data)[1],1);
 			if($r["ret"] < 1){
 				print Display::Error($r["mes"].n);

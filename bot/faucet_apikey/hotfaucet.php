@@ -112,8 +112,8 @@ class Bot {
 			if(!$id)break;
 			$r = Requests::get(host."ptc/view/".$id,$this->headers())[1];
 			$scrap = $this->scrap->Result($r);
-			$timer = explode(';', explode("var timer = ", $r)[1])[0];//10;
-			$url = explode("';", explode("var url = '", $r)[1])[0];//https://tap-coin.de/refer/user/15311
+			$timer = explode(';', explode("var timer = ", $r)[1])[0];
+			$url = explode("';", explode("var url = '", $r)[1])[0];
 			Display::Cetak("ptc", $url);
 			if($timer){
 				Functions::Tmr($timer+5);
@@ -121,7 +121,7 @@ class Bot {
 			
 			$data = $scrap['input'];
 			if($scrap['input']['_iconcaptcha-token']){
-				$icon = $this->iconBypass($scrap['input']['_iconcaptcha-token']);
+				$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
 				if(!$icon)continue;
 				$data = array_merge($data, $icon);
 			}elseif($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
@@ -140,7 +140,7 @@ class Bot {
 				continue;
 			}
 			
-			$data = http_build_query($data);
+			if(is_array($data)){$data = http_build_query($data);}else{continue;}
 			$r = Requests::post(host."ptc/verify/".$id,$this->headers(), $data)[1];
 			$wr = explode('</div>', explode('<i class="fas fa-exclamation-circle"></i> ',$r)[1])[0];//Invalid Anti-Bot Links
 			preg_match("/Swal\.fire\('([^']*)', '([^']*)', '([^']*)'\)/", $r, $matches);
@@ -204,7 +204,7 @@ class Bot {
 			}
 			
 			if($scrap['input']['_iconcaptcha-token']){
-				$icon = $this->iconBypass($scrap['input']['_iconcaptcha-token']);
+				$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
 				if(!$icon)continue;
 				$data = array_merge($data, $icon);
 			}elseif($scrap['captcha']['mt-3 mb-3 cf-turnstile']){
@@ -222,7 +222,7 @@ class Bot {
 				print "\r                              \r";
 				continue;
 			}
-			$data = http_build_query($data);
+			if(is_array($data)){$data = http_build_query($data);}else{continue;}
 			$r = Requests::post(host.$xxx."/verify",$this->headers(), $data)[1];
 			$wr = explode('</div>', explode('<i class="fas fa-exclamation-circle"></i> ',$r)[1])[0];//Invalid Anti-Bot Links
 			preg_match("/Swal\.fire\('([^']*)', '([^']*)', '([^']*)'\)/", $r, $matches);
@@ -244,82 +244,8 @@ class Bot {
 			}
 		}
 		print Display::Error("Limit faucet\n");
+		Display::Line();
+		return;
 	}
-	private function iconBypass($token, $url = host."icaptcha/req", $theme = "light"){
-		
-		$icon_header = $this->headers();
-		$icon_header[] = "origin: ".host;
-		$icon_header[] = "x-iconcaptcha-token: ".$token;
-		$icon_header[] = "x-requested-with: XMLHttpRequest";
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$widgetID = $this->widgetId();
-		
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"	=> $widgetID,
-				"action" 	=> "LOAD",
-				"theme" 	=> $theme,
-				"token" 	=> $token,
-				"timestamp"	=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url, $icon_header, $data)[1]),1);
-		$base64Image = $r["challenge"];
-		$challengeId = $r["identifier"];
-		if(!$base64Image || !$challengeId){
-			return;
-		}
-		$cap = $this->iewil->IconCoordiant($base64Image);
-		if(!$cap['x'])return;
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"		=> $widgetID,
-				"challengeId"	=> $challengeId,
-				"action"		=> "SELECTION",
-				"x"				=> $cap['x'],
-				"y"				=> 24,
-				"width"			=> 320,
-				"token" 		=> $token,
-				"timestamp"		=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url,$icon_header, $data)[1]),1);
-		if(!$r['completed']){
-			return;
-		}
-		$data = [];
-		$data['captcha'] = "icaptcha";
-		$data['_iconcaptcha-token']=$token;
-		$data['ic-rq']=1;
-		$data['ic-wid'] = $widgetID;
-		$data['ic-cid'] = $challengeId;
-		$data['ic-hp'] = '';
-		return $data;
-	}
-	private function widgetId() {
-		$uuid = '';
-		for ($n = 0; $n < 32; $n++) {
-			if ($n == 8 || $n == 12 || $n == 16 || $n == 20) {
-				$uuid .= '-';
-			}
-			$e = mt_rand(0, 15);
-
-			if ($n == 12) {
-				$e = 4;
-			} elseif ($n == 16) {
-				$e = ($e & 0x3) | 0x8;
-			}
-			$uuid .= dechex($e);
-		}
-		return $uuid;
-	}
-	
 }
 new Bot();

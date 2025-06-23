@@ -1,12 +1,5 @@
 <?php
 
-/*
-if (!defined('title') || title == "") {
-    define("title", "tronpayu");
-    require "../../modul/class.php";
-}
-*/
-
 const
 versi = "0.0.1",
 host = "https://allfaucet.xyz/",
@@ -14,6 +7,9 @@ refflink = "https://allfaucet.xyz/?r=290",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
+	protected $cookie;
+	protected $uagent;
+	
 	function __construct(){
 		$this->coins = "";
 		Display::Ban(title, versi);
@@ -168,7 +164,8 @@ class Bot {
 						exit;
 					}
 				}
-				$data = http_build_query($data);
+				if(is_array($data)){$data = http_build_query($data);}else{continue;}
+				
 				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
 				$scrap = $this->scrap->Result($r);
 				if($scrap['firewall']){
@@ -176,48 +173,23 @@ class Bot {
 					$this->Firewall();
 					continue;
 				}
-				if(preg_match('/Invalid API Key used/',$r)){
-					unset($this->coins[$a]);
-					Display::Cetak($coin,"invalid apikey used\n");
-					Display::Line();
-					continue;
-				}
-				$ban = explode('</div>',explode('<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account',$r)[1])[0];
-				$ss = explode("title: 'Success!',",$r)[1];
-				$wr = explode("'",explode("html: '",$r)[1])[0];
-				if($ban){
-					print Display::Error("Your account".$ban.n);
-					exit;
-				}
-				if(preg_match('/invalid amount/',$r)){
-					unset($this->coins[$a]);
-					print Display::Error("You are sending an invalid amount of payment to the user\n");
-					Display::Line();
-				}
-				if(preg_match('/Shortlink in order to claim from the faucet!/',$r)){
-					print Display::Error(explode("'",explode("html: '",$r)[1])[0]);
-					Display::Line();
-					exit;
-				}
-				if(preg_match('/sufficient funds/',$r)){
-					unset($this->coins[$a]);
-					Display::Cetak($coin,"Sufficient funds");
-					Display::Line();
-					continue;
-				}
-				if($ss){
-					Display::Cetak($coin," ");
-					print Display::Sukses(strip_tags(explode("'",explode("html: '",$ss)[1])[0]));
-					Display::Cetak("Apikey",$this->captcha->getBalance());
-					Display::Line();
-				}elseif($wr){
-					print Display::Error(substr($wr,0,30));
+				if($scrap["response"]["success"]){
+					Display::cetak($coin," ");
+					Display::sukses($scrap["response"]["success"]);
+					Display::cetak("Apikey",$this->captcha->getBalance());
+					Display::line();
+				}elseif($scrap["response"]["warning"]){ 
+					Display::Error($scrap["response"]["warning"]);
+					if($scrap["response"]["unset"]){
+						unset($coins[$a]);
+						PHP_EOL;
+						Display::line();
+					}elseif($scrap["response"]["exit"]){
+						PHP_EOL;
+						exit;
+					}
 					sleep(3);
 					print "\r                              \r";
-				}else{
-					print Display::Error("Server Down");
-					sleep(3);
-					print "\r                  \r";
 				}
 			}
 			if(!$this->coins){
