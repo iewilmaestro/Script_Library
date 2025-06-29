@@ -32,6 +32,10 @@ cd Script_Library
 ```
 php run.php
 ```
+show debug
+```
+php run.php debug
+```
 # About Script_Library
 - automatically perform tasks that are possible
 - Special free captcha bypass Antibotlinks, Gp recaptcha, hash icon, icon coordinates, Alt captcha
