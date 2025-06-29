@@ -1,12 +1,5 @@
 <?php
 
-/*
-if (!defined('title') || title == "") {
-    define("title", "tronpayu");
-    require "../../modul/class.php";
-}
-*/
-
 const
 versi = "0.0.1",
 host = "https://adbch.top/",
@@ -14,7 +7,7 @@ refflink = "https://adbch.top/r/110267",
 youtube = "https://youtube.com/@iewil";
 
 class Bot{
-	public $cookie,$uagent;
+	private $cookie,$uagent;
 	public function __construct(){
 		Display::Ban(title, versi);
 		cookie:
@@ -39,7 +32,7 @@ class Bot{
 		
 		$this->Claim();
 	}
-	public function headers($xml = 0){
+	private function headers($xml = 0){
 		$h[] = "Host: ".parse_url(host)['host'];
 		$h[] = "Upgrade-Insecure-Requests: 1";
 		$h[] = "Connection: keep-alive";
@@ -50,13 +43,13 @@ class Bot{
 		$h[] = "cookie: ".$this->cookie;
 		return $h;
 	}
-	public function Dashboard(){
+	private function Dashboard(){
 		$r = Requests::get(host."dashboard",$this->headers())[1];
-		$user = explode('</b>',explode('User id: <b>',$r)[1])[0];
-		$bal = explode('</b>',explode('Balance<br><b>',$r)[1])[0];
+		$user = Functions::Mid($r, 'User id: <b>', '</b>');
+		$bal = Functions::Mid($r, 'Balance<br><b>', '</b>');
 		return ["user"=>$user,"balance"=>$bal];
 	}
-	public function Claim(){
+	private function Claim(){
 		while(true){
 			$data = [];
 			$r = Requests::get(host."surf/browse/",$this->headers())[1];
@@ -70,17 +63,18 @@ class Bot{
 				$data[$label] = $x[2][$a];
 			}
 			$data = http_build_query($data);
-			$tmr = explode("'",explode("let duration = '",$r)[1])[0];
+			$tmr = Functions::Mid($r, "let duration = '", "'");
 			if($tmr){Functions::tmr($tmr);}
 			
 			$r = Requests::post(host."surf/browse/",$this->headers(),$data)[1];
-			$ss = explode('BCH',explode('You earned ',$r)[1])[0];
-			$bal = explode('</b>',explode('class="white-text bal">Баланс: <b>',$r)[1])[0];
-			Display::Cetak("Success",$ss);
-			$r = Requests::get(host."dashboard",$this->headers())[1];
-			$bal = explode('</b>',explode('Balance<br><b>',$r)[1])[0];
-			Display::Cetak("Balance",$bal);
-			Display::Line();
+			$ss = Functions::Mid($r, 'You earned ', 'BCH');
+			if($ss){
+				Display::Cetak("Success",$ss);
+				$r = Requests::get(host."dashboard",$this->headers())[1];
+				$bal = Functions::Mid($r, 'Balance<br><b>', '</b>');
+				Display::Cetak("Balance",$bal);
+				Display::Line();
+			}
 		}
 	}
 }

@@ -1,12 +1,5 @@
 <?php
 
-/*
-if (!defined('title') || title == "") {
-    define("title", "tronpayu");
-    require "../../modul/class.php";
-}
-*/
-
 const
 versi = "0.0.1",
 host = "https://dogefree.in/",
@@ -14,7 +7,7 @@ refflink = "https://dogefree.in/?r=319828",
 youtube = "https://youtube.com/@iewil";
 
 class Bot{
-	public $cookie,$uagent;
+	private $cookie,$uagent,$csrf;
 	public function __construct(){
 		Display::Ban(title, versi);
 		cookie:
@@ -66,7 +59,7 @@ class Bot{
 		];
 		return $h;
 	}
-	public function num_rand($int){
+	private function num_rand($int){
 		$rand_num = "1234567890";
 		$split = str_split($rand_num);
 		$res = "";
@@ -78,7 +71,7 @@ class Bot{
 			}
 		}
 	}
-	public function str_rand($int){
+	private function str_rand($int){
 		$rand_str = "abcdefghijklmnopqrstuvwqyz";
 		$rand_num = "1234567890";
 		$rand_str_up= "ABCDEFGHIJKLMNOPQRSTUVWQYZ";

@@ -2,8 +2,8 @@
 
 const
 versi = "0.0.1",
-host = "https://gamerlee.com/",
-refflink = "https://gamerlee.com/?r=5243",
+host = "https://litetrx.in/",
+refflink = "https://litetrx.in/?r=659",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
@@ -17,7 +17,6 @@ class Bot {
 		
 		$this->cookie = Functions::setConfig("cookie");
 		$this->uagent = Functions::setConfig("user_agent");
-		//$this->captcha = new Captcha();
 		$this->scrap = new HtmlScrap();
 		
 		Display::Ban(title, versi);
@@ -32,8 +31,8 @@ class Bot {
 		Display::Cetak("ReffId", $r);
 		Display::Line();
 		select_coin:
-		$r = Requests::get(host."app/dashboard",$this->headers())[1];
-		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/app\/faucet\?currency=([a-zA-Z0-9]+)#', $r, $matches);
+		$r = Requests::get(host,$this->headers())[1];
+		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/faucet\/currency\/([a-zA-Z0-9]+)#', $r, $matches);
 		$this->coins = $matches[1];
 		foreach($this->coins as $num => $coins){
 			Display::Menu(($num+1), strtoupper($coins));
@@ -73,7 +72,7 @@ class Bot {
 	private function check($r){
 		$scrap = $this->scrap->Result($r);
 		if($scrap['cloudflare']){
-			print Display::Error(host."app/faucet?currency=LTC\n");
+			print Display::Error(host."faucet/currency/ltc\n");
 			print Display::Error("Cloudflare Detect\n");
 			Display::Line();
 			return 1;
@@ -88,23 +87,12 @@ class Bot {
 	}
 	
 	public function Dashboard(){
-		dashboard:
-		$r = Requests::get(host."app/dashboard",$this->headers())[1];
-		$scrap = $this->scrap->Result($r);
-		if($scrap['firewall']){
-			print Display::Error("Firewall Detect\n");
-			//$this->Firewall();
-			//continue;
-			exit;
+		$r = Requests::get(host,$this->headers())[1];
+		$this->check($r);
+		if(preg_match('/Logout/', $r)){
+			return 1;
 		}
-		if($scrap['cloudflare']){
-			print Display::Error(host."faucet/currency/".$coin.n);
-			print Display::Error("Cloudflare Detect\n");
-			Display::Line();
-			return;
-		}
-		$refId = explode('"', explode('value="'.host.'?r=', $r)[1])[0];
-		return $refId;
+		return;
 	}
 	public function Firewall(){
 		while(1){
@@ -116,7 +104,7 @@ class Bot {
 			$data = $scrap['input'];
 			
 			if($scrap['captcha']['cf-turnstile']){
-				$cap = $this->iewil->Turnstile($scrap['captcha']['cf-turnstile'], host);
+				$cap = $this->captcha->Turnstile($scrap['captcha']['cf-turnstile'], host);
 				$data['cf-turnstile-response']= $cap;
 			}elseif($scrap['captcha']['h-captcha']){
 				$cap = $this->captcha->Hcaptcha($scrap['captcha']['h-captcha'], host);
@@ -128,7 +116,7 @@ class Bot {
 			}
 			if(!$cap)continue;
 			
-			$r = Requests::post(host."app/firewall/verify",$this->headers(), http_build_query($data))[1];
+			$r = Requests::post(host."firewall/verify",$this->headers(), http_build_query($data))[1];
 			if(preg_match('/Invalid Captcha/',$r))continue;
 			Display::Cetak("Firewall","Bypassed");
 			Display::Line();
@@ -144,7 +132,7 @@ class Bot {
 				return 1;
 			}
 			foreach($coins as $a => $coin){
-				$r = Requests::get(host."app/faucet?currency=".$coin,$this->headers())[1];
+				$r = Requests::get(host."faucet/currency/".$coin,$this->headers())[1];
 				$scrap = $this->scrap->Result($r);
 				if($scrap['firewall']){
 					print Display::Error("Firewall Detect\n");
@@ -181,7 +169,7 @@ class Bot {
 					continue;
 				}
 				// Delay
-				$tmr = Functions::Mid($r, 'var wait = ', "-");
+				$tmr = Functions::Mid($r, 'let timer = ', ";");
 				if($tmr){
 					Functions::Tmr($tmr);
 				}
@@ -200,8 +188,8 @@ class Bot {
 						$cap = $this->captcha->Turnstile($scrap['captcha']['cf-turnstile'], host);
 						$data['cf-turnstile-response']=$cap;
 					}else{
-						print Display::Error("Sitekey Error\n"); 
-						continue;
+						print Display::Error("Update Captcha\n"); 
+						exit;
 					}
 					if(!$cap)continue;
 				}
@@ -217,8 +205,8 @@ class Bot {
 					continue;
 				}
 				$data = http_build_query($data);
-				$r = Requests::post(host."app/faucet/verify?currency=".$coin,$this->headers(), $data)[1];
-				preg_match("/Toast\.fire\({\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*text:\s*'([^']+)'/", $r, $matches);
+				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
+				preg_match("/Swal\.fire\({\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*html:\s*'([^']+)'/", $r, $matches);
 				$scrap = $this->scrap->Result($r);
 				if($scrap['firewall']){
 					print Display::Error("Firewall Detect\n");

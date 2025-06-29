@@ -21,6 +21,7 @@ class Functions {
 		}
 		return $data;
 	}
+	
 	static function cofigApikey(){
 		$configFile = "data/Apikey.json";
 		Display::Title("Select Apikey");
@@ -91,4 +92,14 @@ class Functions {
 	
 	static function cfDecodeEmail($encodedString){$k = hexdec(substr($encodedString,0,2));for($i=2,$email='';$i<strlen($encodedString)-1;$i+=2){$email.=chr(hexdec(substr($encodedString,$i,2))^$k);}return $email;}
 	static function clean($str){return explode('.', $str)[0];}
+	static function mid($string, $start, $end = null, $partIndex = 1) {
+		$parts = explode($start, $string);
+		if (!isset($parts[$partIndex])) return;  // cek partIndex dulu
+
+		$target = $parts[$partIndex];
+
+		if ($end === null) return $target;
+
+		return explode($end, $target)[0] ?? null;
+	}
 }

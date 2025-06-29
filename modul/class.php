@@ -239,33 +239,40 @@ class FreeCaptcha {
 			print "\r                        \r";
 			goto bypass_icon;
 		}
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"		=> $widgetID,
-				"challengeId"	=> $challengeId,
-				"action"		=> "SELECTION",
-				"x"				=> 160,
-				"y"				=> 24,
-				"width"			=> 320,
-				"token" 		=> $token,
-				"timestamp"		=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		sleep(2);
-		print "\r                        \r";
-		print "---[2] Bypass..";
-		$r = json_decode(base64_decode(Requests::post(host.$sub,$icon_header, $data)[1]),1);
-		
-		if (($r['completed'] ?? false) === false) {
+		$captcha = [20, 60, 100, 140, 180, 220, 260, 300];
+		foreach($captcha as $x){
+			$timestamp = round(microtime(true) * 1000);
+			$initTimestamp = $timestamp - 2000;
+			$data = ["payload" => 
+				base64_encode(json_encode([
+					"widgetId"		=> $widgetID,
+					"challengeId"	=> $challengeId,
+					"action"		=> "SELECTION",
+					"x"				=> $x,
+					"y"				=> 24,
+					"width"			=> 320,
+					"token" 		=> $token,
+					"timestamp"		=> $timestamp,
+					"initTimestamp"	=> $initTimestamp
+				]))
+			];
 			sleep(2);
 			print "\r                        \r";
-			print "---[3] Bypass failed";
-			sleep(2);
-			print "\r                        \r";
-			goto bypass_icon;
+			print "---[2] Bypass..";
+			$r = json_decode(base64_decode(Requests::post(host.$sub,$icon_header, $data)[1]),1);
+			
+			if (($r['completed'] ?? false) === false) {
+				sleep(2);
+				print "\r                        \r";
+				print "---[3] Bypass failed";
+				sleep(2);
+				print "\r                        \r";
+				continue;
+			}elseif(isset($r['completed'])){
+				break;
+			}else{
+				goto bypass_icon;
+			}
 		}
 		sleep(2);
 		print "\r                        \r";
@@ -281,10 +288,40 @@ class FreeCaptcha {
 		$data['ic-hp'] = '';
 		return $data;
 	}
+	static function EmotCaptcha($headers){
 	
+		$result = [];
+		
+		bypass_icon:
+		$r = json_decode(Requests::get(host."ecaptcha/get_token",$headers)[1],1);
+		
+		if(!$r["token"]){
+			exit("Captcha:: token expired\n");
+		}
+		$result["captcha_token"] = $r["token"];
+		
+		$r = json_decode(Requests::get(host."ecaptcha/get_captcha",$headers)[1],1);
+		$result["captcha_key"] = $r["captcha_key"];
+		$question = strtolower(trim(explode(':', $r["question"])[1]));
+		
+		$data = http_build_query([
+			"selected" => "$question.gif",
+			"key"	=> $result["captcha_key"],
+			"token"	=> $result["captcha_token"]
+		]);
+		$r = json_decode(Requests::post(host."ecaptcha/validate_icon",$headers, $data)[1],1);
+		if($r["status"] == "valid"){
+			$result["captcha"] = "emoji_captcha";
+			$result["selected_icon"] = "$question.gif";
+			return $result;
+		}
+		goto bypass_icon;
+	}
 	static function Icon_hash($header){
+		$hash = [];
+		$data_array = [];
+		
 		$url = host.'system/libs/captcha/request.php';
-		$data["method"] = "icon_hash";
 		$head = array_merge($header, ["X-Requested-With: XMLHttpRequest"]);
 		$getCap = json_decode(Requests::post($url,$head,"cID=0&rT=1&tM=light")[1],1);
 		if(!$getCap){
@@ -295,11 +332,26 @@ class FreeCaptcha {
 		foreach($getCap as $c){
 			$data[$c] = base64_encode(Requests::get($url.'?cid=0&hash='.$c, $head2)[1]);
 		}
-		$data = http_build_query($data);
-		$cap = json_decode(Requests::post("https://iewilbot.my.id/res.php","",$data)[1],1);
-		if(!$cap['status'])return 0;
-		Requests::postXskip($url,$head,"cID=0&pC=".$cap['result']."&rT=2");
-		return $cap['result'];
+		
+		foreach($data as $value => $name) {
+		    $hash[] = $value;
+		    $data_array[] = strlen($name);
+		}
+		for ($i = 0; $i < count($data_array); $i++) {
+			$current_size = $data_array[$i];
+			$is_duplicate = false;
+			for ($j = 0; $j < count($data_array); $j++) {
+				if ($i != $j && $current_size == $data_array[$j]) {
+					$is_duplicate = true;
+					break;
+				}
+			}
+			if (!$is_duplicate) {
+				return $hash[$i];
+			}
+		}
+		
+		return $hash[-1];
 	}
 }
 

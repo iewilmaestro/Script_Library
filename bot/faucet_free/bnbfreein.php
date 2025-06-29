@@ -7,7 +7,7 @@ refflink = "https://bnbfree.in/?r=17907",
 youtube = "https://youtube.com/@iewil";
 
 class Bot{
-	public $cookie,$uagent;
+	private $cookie,$uagent,$csrf;
 	public function __construct(){
 		Display::Ban(title, versi);
 		cookie:

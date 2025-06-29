@@ -7,6 +7,8 @@ refflink = "https://satoshifaucet.io/?r=8841",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
+	private $coins;
+	
 	public function __construct(){
 		Display::Ban(title, versi);
 		
@@ -83,7 +85,7 @@ class Bot {
 	private function check($r){
 		$scrap = $this->scrap->Result($r);
 		if($scrap['cloudflare']){
-			print Display::Error("https://satoshifaucet.io/links/currency/ltc\n");
+			print Display::Error(host."links/currency/ltc\n");
 			print Display::Error("Cloudflare Detect\n");
 			Display::Line();
 			return 1;
@@ -94,13 +96,14 @@ class Bot {
 		if($data)$h[] = "Content-Length: ".strlen($data);
 		$h[] = "User-Agent: ".$this->uagent;
 		$h[] = "Cookie: ".$this->cookie;
+		$h[] = "x-requested-with: XMLHttpRequest";
 		return $h;
 	}
 	
 	public function Dashboard(){
 		$r = Requests::get(host."referrals",$this->headers())[1];
 		$this->check($r);
-		$refId = explode('"', explode('value="https://satoshifaucet.io/?r=', $r)[1])[0];
+		$refId = explode('"', explode('value="'.host.'?r=', $r)[1])[0];
 		return $refId;
 	}
 	public function Firewall(){
@@ -128,6 +131,7 @@ class Bot {
 			return;
 		}
 	}
+	
 	public function Claim($coins){
 		while(true){
 			$r = $this->Dashboard();
@@ -159,8 +163,8 @@ class Bot {
 					Display::Cetak($coin,"Daily claim limit");
 					continue;
 				}
-				$status_bal = explode('</span>',explode('<span class="badge badge-danger">',$r)[1])[0];
-				if($status_bal == "Empty"){
+				$status_bal = Functions::Mid($r, '<span class="badge badge-danger">', '</span>');
+				if($status_bal && $status_bal == "Empty"){
 					unset($coins[$a]);
 					Display::Cetak($coin,"Sufficient funds");
 					continue;
@@ -173,16 +177,17 @@ class Bot {
 					Functions::Tmr($tmr+5);
 					continue;
 				}
-				// Delay
-				$tmr = explode("-",explode('var wait = ',$r)[1])[0];
+				$tmr = Functions::Mid($r, 'var wait = ', "-");
+				
 				if($tmr){
 					Functions::Tmr($tmr);
 				}
 				
 				// Exsekusi
 				$data = $scrap['input'];
-				if(explode('rel=\"',$r)[1]){
-					$antibot = $this->iewil->AntiBot($r);
+				$cekATB = explode('rel=\"',$r);
+				if(isset($cekATB[1])){
+					$antibot = $this->captcha->AntiBot($r);
 					if(!$antibot)continue;
 					$data['antibotlinks'] = str_replace("+"," ",$antibot);
 				}
@@ -190,8 +195,13 @@ class Bot {
 					print Display::Error("Captcha Update\n");
 					exit;
 				}
-				if($scrap['input']['_iconcaptcha-token']){
+				$option_captcha = Functions::Mid($r, '<option value="', '"');
+				if(isset($scrap['input']['_iconcaptcha-token'])){
 					$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
+					if(!$icon)continue;
+					$data = array_merge($data, $icon);
+				}elseif($option_captcha == "emoji_captcha"){
+					$icon = FreeCaptcha::EmotCaptcha($this->headers());
 					if(!$icon)continue;
 					$data = array_merge($data, $icon);
 				}
@@ -217,8 +227,7 @@ class Bot {
 					Display::Line();
 					continue;
 				}
-				$ban = explode('</div>',explode('<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account',$r)[1])[0];
-				
+				$ban = Functions::Mid($r, '<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account', '</div>');
 				if($ban){
 					print Display::Error("Your account".$ban.n);
 					exit;
@@ -243,11 +252,10 @@ class Bot {
 				if($matches[2] == "Success!"){
 					Display::Cetak($coin," ");
 					print Display::Sukses($matches[3]);
-					//Display::Cetak("Apikey",$this->captcha->getBalance());
 					Display::Line();
 				}else{ 
 					print Display::Error($matches[3]);
-					if(preg_match('/ShortLinks/',$matches[3])){
+					if(preg_match('/Shortlink/',$matches[3])){
 						print n;
 						Display::Line();
 						exit;

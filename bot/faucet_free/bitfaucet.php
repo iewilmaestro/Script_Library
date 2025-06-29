@@ -3,194 +3,273 @@
 const
 versi = "0.0.1",
 host = "https://bitfaucet.net/",
-refflink = "https://bitfaucet.net/?r=18047",
+refflink = "https://bitfaucet.net/?r=714",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
-	function __construct(){
+	private $coins;
+	
+	public function __construct(){
 		Display::Ban(title, versi);
 		
 		cookie:
 		Display::Cetak("Register",refflink);
 		Display::Line();
-			
+		
 		$this->cookie = Functions::setConfig("cookie");
 		$this->uagent = Functions::setConfig("user_agent");
-		Functions::view();
-		
 		$this->iewil = new Iewil();
 		$this->scrap = new HtmlScrap();
 		
-		Display::Ban(title, versi);
-		$r = $this->dashboard();
 		
-		if(!$r["username"]){
-			print Display::Error("Cookie expired\n");
+		Display::Ban(title, versi);
+			
+		$r = $this->Dashboard();
+		if(!$r){
 			Functions::removeConfig("cookie");
+			print Display::Error("Cookie Expired\n");
 			Display::Line();
 			goto cookie;
 		}
-		Display::Cetak("Username",$r["username"]);
-		Display::Cetak("Balance",$r["balance"]);
+		Display::Cetak("ReffId", $r);
 		Display::Line();
+		select_coin:
+		$r = Requests::get(host,$this->headers())[1];
+		preg_match_all('#https?:\/\/'.str_replace('.','\.',parse_url(host)['host']).'\/faucet\/currency\/([a-zA-Z0-9]+)#', $r, $matches);
+		$temp = [];
+		$result = [];
 
-		if($this->claim()){
-			Functions::removeConfig("cookie");
+		foreach ($matches[1] as $item) {
+			$lower = strtolower($item);
+			if (!in_array($lower, $temp)) {
+				$temp[] = $lower;
+				$match[] = $item;
+			}
+		}
+		$this->coins = $match;
+		foreach($this->coins as $num => $coins){
+			Display::Menu(($num+1), strtoupper($coins));
+			$all_coin[$num+1][0] = $coins;
+		}
+		Display::Menu(($num+=2), "All Coins");
+		$all_coin[$num] = $this->coins;
+		print Display::Isi("Nomor");
+		$pil = readline();
+		Display::Line();
+			
+		$pil = preg_replace('/\s+/','',$pil);
+		preg_match_all('/(\d+)/', $pil, $match);
+		if(count($match[1]) > 1){
+			for($i = 0; $i < count($match[1]); $i++){
+				$coin[$i] = $all_coin[$match[1][$i]][0];
+			}
+			$title = strtoupper(implode(",", $coin));
+		}elseif(!is_numeric($pil) || $pil > $num || $pil < 1){
+			print Display::Error("Wrong method!\n");
 			Display::Line();
+			goto select_coin;
+		}else{
+			$coin = $all_coin[$pil];
+			if(count($coin) > 1){
+				$title = "All Coins";
+			}else{
+				$title = $coin[0];
+			}
+		}
+		print Display::Title($title);
+		if($this->Claim($coin)){
+			Functions::removeConfig("cookie");
 			goto cookie;
 		}
 	}
-	private function headers($data=0){
+	private function check($r){
+		$scrap = $this->scrap->Result($r);
+		if($scrap['cloudflare']){
+			print Display::Error(host."links/currency/ltc\n");
+			print Display::Error("Cloudflare Detect\n");
+			Display::Line();
+			return 1;
+		}
+	}
+	public function headers($data=0){
 		$h[] = "Host: ".parse_url(host)['host'];
 		if($data)$h[] = "Content-Length: ".strlen($data);
 		$h[] = "User-Agent: ".$this->uagent;
 		$h[] = "Cookie: ".$this->cookie;
+		$h[] = "x-requested-with: XMLHttpRequest";
 		return $h;
 	}
-	private function dashboard(){
-		$r = Requests::get(host."dashboard",$this->headers())[1];
-		$data["username"] = trim(explode('<',explode('<h3 class="card-title" style="margin-bottom: 0; color: var(--text-primary);">', $r)[1])[0]);
-		$data["balance"] = explode('</h3>', explode('<h3 style="color: var(--text-primary);font-weight: bold">',explode('Available Balance</p>', $r)[1])[1])[0];
-		return $data;
+	
+	public function Dashboard(){
+		$r = Requests::get(host."referrals",$this->headers())[1];
+		$this->check($r);
+		$refId = explode('"', explode('value="'.host.'?r=', $r)[1])[0];
+		return $refId;
 	}
-	private function claim(){
-		while(true){
-			$r = Requests::get(host."faucet",$this->headers())[1];
+	public function Firewall(){
+		while(1){
+			$r = Requests::get(host."firewall",$this->headers())[1];
 			$scrap = $this->scrap->Result($r);
-			if($scrap['firewall']){
-				print Display::Error("Firewall Detect\n");
-				$this->Firewall();
+			if(!$scrap['input']){
+				$scrap = $this->scrap->Result($r);
+			}
+			$data = $scrap['input'];
+			
+			if($scrap['captcha']['cf-turnstile']){
+				$cap = $this->captcha->Turnstile($scrap['captcha']['cf-turnstile'], host);
+				$data['cf-turnstile-response']=$cap;
+			}else{
+				print Display::Error("Sitekey Error\n"); 
 				continue;
 			}
-			if($scrap['cloudflare']){
-				print Display::Error(host."faucet".n);
-				print Display::Error("Cloudflare Detect\n");
+			if(!$cap)continue;
+			
+			$r = Requests::post(host."firewall/verify",$this->headers(), http_build_query($data))[1];
+			if(preg_match('/Invalid Captcha/',$r))continue;
+			Display::Cetak("Firewall","Bypassed");
+			Display::Line();
+			return;
+		}
+	}
+	
+	public function Claim($coins){
+		while(true){
+			$r = $this->Dashboard();
+			if(!$r){
+				print Display::Error("Cookie Expired\n");
 				Display::Line();
 				return 1;
 			}
-			$available = explode('</b>', explode('<b class="mt-1 mb-2">Available faucet claim: ', $r)[1])[0];
-			if(!$available){
-				print Display::Error("After every 30 faucet claims,\n1 Shortlink must be completed to continue again!");
-				exit;
+			foreach($coins as $a => $coin){
+				$r = Requests::get(host."faucet/currency/".$coin,$this->headers())[1];
+				$scrap = $this->scrap->Result($r);
+				if($scrap['firewall']){
+					print Display::Error("Firewall Detect\n");
+					exit;
+					//$this->Firewall();
+					//continue;
+				}
+				if($scrap['cloudflare']){
+					print Display::Error(host."faucet/currency/".$coin.n);
+					print Display::Error("Cloudflare Detect\n");
+					Display::Line();
+					return 1;
+				}
+				
+				// Mesasge
+				if(preg_match("/You don't have enough energy for Auto Faucet!/",$r)){exit(Error("You don't have enough energy for Auto Faucet!\n"));}
+				if(preg_match('/Daily claim limit/',$r)){
+					unset($coins[$a]);
+					Display::Cetak($coin,"Daily claim limit");
+					continue;
+				}
+				$status_bal = Functions::Mid($r, '<span class="badge badge-danger">', '</span>');
+				if($status_bal && $status_bal == "Empty"){
+					unset($coins[$a]);
+					Display::Cetak($coin,"Sufficient funds");
+					continue;
+				}
+				preg_match('/<b id="minute">(\d+)<\/b>:(<b id="second">(\d+)<\/b>)/', $r, $matches);
+				if (isset($matches[1]) && isset($matches[3])) {
+					$minute = $matches[1];
+					$second = $matches[3];
+					$tmr = ($minute * 60) + $second;
+					Functions::Tmr($tmr+5);
+					continue;
+				}
+				$tmr = Functions::Mid($r, 'var wait = ', "-");
+				
+				if($tmr){
+					Functions::Tmr($tmr);
+				}
+				
+				// Exsekusi
+				$data = $scrap['input'];
+				$cekATB = explode('rel=\"',$r);
+				if(isset($cekATB[1])){
+					$antibot = $this->captcha->AntiBot($r);
+					if(!$antibot)continue;
+					$data['antibotlinks'] = str_replace("+"," ",$antibot);
+				}
+				if($scrap['captcha']){
+					print Display::Error("Captcha Update\n");
+					exit;
+				}
+				$option_captcha = Functions::Mid($r, '<option value="', '"');
+				if(isset($scrap['input']['_iconcaptcha-token'])){
+					$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
+					if(!$icon)continue;
+					$data = array_merge($data, $icon);
+				}elseif($option_captcha == "emoji_captcha"){
+					$icon = FreeCaptcha::EmotCaptcha($this->headers());
+					if(!$icon)continue;
+					$data = array_merge($data, $icon);
+				}
+				if(!$data){
+					print Display::Error("Data not found");
+					sleep(3);
+					print "\r                              \r";
+					continue;
+				}
+				$data = http_build_query($data);
+				$r = Requests::post(host."faucet/verify/".$coin,$this->headers(), $data)[1];
+				preg_match("/Swal\.fire\(\s*{\s*icon:\s*'([^']+)',\s*title:\s*'([^']+)',\s*html:\s*'([^']+)'/", $r, $matches);
+				$scrap = $this->scrap->Result($r);
+				if($scrap['firewall']){
+					print Display::Error("Firewall Detect\n");
+					//$this->Firewall();
+					//continue;
+					exit;
+				}
+				if(preg_match('/Invalid API Key used/',$r)){
+					unset($coins[$a]);
+					Display::Cetak($coin,"Invalid apikey used");
+					Display::Line();
+					continue;
+				}
+				$ban = Functions::Mid($r, '<div class="alert text-center alert-danger"><i class="fas fa-exclamation-circle"></i> Your account', '</div>');
+				if($ban){
+					print Display::Error("Your account".$ban.n);
+					exit;
+				}
+				if(preg_match('/invalid amount/',$r)){
+					unset($coins[$a]);
+					print Display::Error("You are sending an invalid amount of payment to the user\n");
+					Display::Line();
+				}
+				if(preg_match('/Shortlink in order to claim from the faucet!/',$r)){
+					print Display::Error(explode("'",explode("html: '",$r)[1])[0]);
+					Display::Line();
+					exit;
+				}
+				if(preg_match('/sufficient funds/',$r)){
+					unset($coins[$a]);
+					Display::Cetak($coin,"Sufficient funds");
+					Display::Line();
+					continue;
+				}
+				
+				if($matches[2] == "Success!"){
+					Display::Cetak($coin," ");
+					print Display::Sukses($matches[3]);
+					//Display::Cetak("Apikey",$this->captcha->getBalance());
+					Display::Line();
+				}else{ 
+					print Display::Error($matches[3]);
+					if(preg_match('/Shortlink/',$matches[3])){
+						print n;
+						Display::Line();
+						exit;
+					}
+					sleep(3);
+					print "\r                              \r";
+				}
 			}
-			if($scrap['faucet'][1][0] < 1)break;
-			$tmr = explode('-', explode('var wait = ', $r)[1])[0];
-			if($tmr){
-				Functions::Tmr($tmr);
-				continue;
-			}
-			$data = $scrap['input'];
-			if($scrap['input']['_iconcaptcha-token']){
-				$icon = $this->iconBypass($scrap['input']['_iconcaptcha-token']);
-				if(!$icon)continue;
-				$data = array_merge($data, $icon);
-			}
-			if(!$data){
-				print Display::Error("Data not found");
-				sleep(3);
-				print "\r                              \r";
-				continue;
-			}
-			$data = http_build_query($data);
-			$r = Requests::post(host."faucet/verify", $this->headers(), $data)[1];
-			$scrap = $this->scrap->Result($r);
-			/*
-			$wr = explode('</div>', explode('<div class="alert text-center alert-info"><i class="fas fa-exclamation-circle"></i> ', $r)[1])[0];//After every 30 faucet claims, 1 Shortlink must be completed to continue again! if you already claimed shortlinks so you receive 30 faucet claim every shortLinks claim 👍 
-			if(preg_match('/Shortlink/', $wr)){
-				print Display::Error(str_replace(",","\n",$wr));
-				exit;
-			}*/
-			preg_match('/Toast\.fire\(\s*{\s*icon:\s*"([^"]*)"\s*,\s*title:\s*"([^"]*)"\s*}\s*\);/', $r, $matches);
-			if($matches[1] == 'success'){
-				Display::Cetak('Limit', $scrap['faucet'][0][0]);
-				print Display::Sukses($matches[2]);
-				$r = $this->Dashboard();
-				Display::Cetak("Balance",$r['balance']);
-				Display::Line();
-			}else{
-				print Display::Error("no respon".n);
-				Display::Line();
-				exit;
+			if(!$coins){
+				print Display::Error("All coins have been claimed\n");
+				return;
 			}
 		}
-		print Display::Error("Faucet Finished\n");
-		Display::Line();
-	}
-	private function iconBypass($token, $url = host."icaptcha/req", $theme = "light"){
-		
-		$icon_header = $this->headers();
-		$icon_header[] = "origin: ".host;
-		$icon_header[] = "x-iconcaptcha-token: ".$token;
-		$icon_header[] = "x-requested-with: XMLHttpRequest";
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$widgetID = $this->widgetId();
-		
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"	=> $widgetID,
-				"action" 	=> "LOAD",
-				"theme" 	=> $theme,
-				"token" 	=> $token,
-				"timestamp"	=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url, $icon_header, $data)[1]),1);
-		$base64Image = $r["challenge"];
-		$challengeId = $r["identifier"];
-		if(!$base64Image || !$challengeId){
-			return;
-		}
-		$cap = $this->iewil->IconCoordiant($base64Image);
-		if(!$cap['x'])return;
-		
-		$timestamp = round(microtime(true) * 1000);
-		$initTimestamp = $timestamp - 2000;
-		$data = ["payload" => 
-			base64_encode(json_encode([
-				"widgetId"		=> $widgetID,
-				"challengeId"	=> $challengeId,
-				"action"		=> "SELECTION",
-				"x"				=> $cap['x'],
-				"y"				=> 24,
-				"width"			=> 320,
-				"token" 		=> $token,
-				"timestamp"		=> $timestamp,
-				"initTimestamp"	=> $initTimestamp
-			]))
-		];
-		$r = json_decode(base64_decode(Requests::post($url,$icon_header, $data)[1]),1);
-		if(!$r['completed']){
-			return;
-		}
-		$data = [];
-		$data['captcha'] = "icaptcha";
-		$data['_iconcaptcha-token']=$token;
-		$data['ic-rq']=1;
-		$data['ic-wid'] = $widgetID;
-		$data['ic-cid'] = $challengeId;
-		$data['ic-hp'] = '';
-		return $data;
-	}
-	private function widgetId() {
-		$uuid = '';
-		for ($n = 0; $n < 32; $n++) {
-			if ($n == 8 || $n == 12 || $n == 16 || $n == 20) {
-				$uuid .= '-';
-			}
-			$e = mt_rand(0, 15);
-
-			if ($n == 12) {
-				$e = 4;
-			} elseif ($n == 16) {
-				$e = ($e & 0x3) | 0x8;
-			}
-			$uuid .= dechex($e);
-		}
-		return $uuid;
 	}
 }
-
 new Bot();

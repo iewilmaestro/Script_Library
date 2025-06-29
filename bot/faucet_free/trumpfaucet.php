@@ -1,12 +1,5 @@
 <?php
 
-/*
-if (!defined('title') || title == "") {
-    define("title", "tronpayu");
-    require "../../modul/class.php";
-}
-*/
-
 const
 versi = "0.0.1",
 host = "https://trumpfaucet.com/",
@@ -25,7 +18,6 @@ class Bot {
 		$this->uagent = Functions::setConfig("user_agent");
 		Functions::view();
 		
-		$this->iewil = new Iewil();
 		$this->scrap = new HtmlScrap();
 		
 		Display::Ban(title, versi);
