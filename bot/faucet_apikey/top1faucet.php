@@ -156,7 +156,7 @@ class Bot {
 					continue;
 				}
 				if($scrap['input']['_iconcaptcha-token']){
-					$icon = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
+					$data = FreeCaptcha::iconBypass($scrap['input']['_iconcaptcha-token'], $this->headers());
 					if(!$data)continue;
 					$data['ci_csrf_token'] = '';
 				}
