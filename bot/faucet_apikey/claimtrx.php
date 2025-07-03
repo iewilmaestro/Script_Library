@@ -1,11 +1,11 @@
 <?php
 
 const
-title = "feyorratop",
+title = "claimtrx",
 versi = "1.0.0",
 class_require = "1.0.9",
-host = "https://feyorra.top/",
-refflink = "https://feyorra.top/?r=34383",
+host = "https://claimtrx.com/",
+refflink = "https://claimtrx.com/?r=440621",
 youtube = "https://youtube.com/@iewil";
 
 class Bot {
@@ -43,7 +43,7 @@ class Bot {
 	}
 	private function Dashboard(){
 		$r = Requests::get(host."dashboard",$this->headers())[1];
-		$data['balance'] = explode('<',explode('<p>', explode('<div class="left_tsc">', $r)[1])[1])[0];
+		$data['balance'] = explode('<',explode('<h2 class="mb-3 font-18">', $r)[1])[0];
 		return $data;
 	}
 	private function headers($data=0){
@@ -86,7 +86,7 @@ class Bot {
 				}
 			}
 			//if($scrap['faucet'][1][0] < 1)break;
-			$timer = explode('-',explode('let wait = ', $r)[1])[0];
+			$timer = explode('-',explode('var wait = ', $r)[1])[0];
 			if($timer){
 				Functions::Tmr($timer);
 				continue;

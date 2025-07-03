@@ -7,13 +7,13 @@ class Captcha {
 	protected $key;
 	
 	public function __construct(){
-		$type = Functions::cofigApikey();
-		$this->url = $type["url"];
-		$this->provider = $type["provider"];
+		$this->type = Functions::cofigApikey();
+		$this->url = $this->type["url"];
+		$this->provider = $this->type["provider"];
 		if($this->provider == "xevil"){
-			$this->key = $type["apikey"]."|SOFTID1204538927";
+			$this->key = $this->type["apikey"]."|SOFTID1204538927";
 		}else{
-			$this->key = $type["apikey"];
+			$this->key = $this->type["apikey"];
 		}
 	}
 	private function in_api($content, $method, $header = 0){
@@ -127,7 +127,10 @@ class Captcha {
 		$data = http_build_query(["method" => "authkong","sitekey" => $sitekey,"pageurl" => $pageurl]);
 		return $this->getResult($data, "GET");
 	}
-	public function Ocr($img){
+	public function Ocr($img, $metod = 0){
+		if($metod){
+			$this->key = $this->type["apikey"]."|$metod|SOFTID1204538927";
+		}
 		if($this->provider == "xevil"){
 			$data = "method=base64&body=".$img;
 		}else{
