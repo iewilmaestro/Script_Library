@@ -128,11 +128,12 @@ class Captcha {
 		return $this->getResult($data, "GET");
 	}
 	public function Ocr($img, $metod = 0){
-		if($metod){
-			$this->key = $this->type["apikey"]."|$metod|SOFTID1204538927";
-		}
+		
 		if($this->provider == "xevil"){
 			$data = "method=base64&body=".$img;
+			if($metod){
+				$this->key = $this->type["apikey"]."|$metod|SOFTID1204538927";
+			}
 		}else{
 			$data = http_build_query(["method" => "universal","body" => $img]);
 		}
