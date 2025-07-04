@@ -22,6 +22,7 @@ class Bot {
 		$this->captcha = new captcha();
 		$this->iewil = new iewil();
 		$this->scrap = new HtmlScrap();
+		$this->tesseract = new Tesseract(title);
 		
 		Display::Ban(title, versi);
 		
@@ -118,7 +119,7 @@ class Bot {
 				if(!$cap)continue;
 			}elseif($captcha_img){
 				$img = base64_encode(Requests::get($captcha_img,$this->headers())[1]);
-				$cap = $this->captcha->Ocr($img, "MTLLM09");
+				$cap = $this->tesseract->Feytop($img, 70);
 				foreach ($data as $key => $value) {
 					if (empty($value)) {
 						$data[$key] = $cap;

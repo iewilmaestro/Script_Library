@@ -12,6 +12,7 @@ require "modul/functions.php";
 require "modul/htmlscrap.php";
 require "modul/captcha.php";
 require "modul/cloudflare.php";
+require "modul/tesseract.php";
 
 if(file_exists("data/error.log")){
 	unlink("data/error.log");
@@ -72,14 +73,15 @@ $a = 0;
 foreach($r as $act){
 	if($act == '.' || $act == '..') continue;
 	$filePath = $folderPath . '/' . $act;
-	
+	/*
     if (is_file($filePath)) {
         $lastModified = date("d/m/Y", filemtime($filePath))." (D/M/Y)";
     }else{
 		$lastModified = 0;
 	}
+	*/
 	$menu2[$a] =  $act;
-	Display::Menu($a, Functions::clean($act),$lastModified);
+	Display::Menu($a, Functions::clean($act));
 	$a++;
 }
 Display::Menu($a, 'Back');

@@ -22,6 +22,7 @@ class Bot {
 		$this->captcha = new captcha();
 		$this->iewil = new iewil();
 		$this->scrap = new HtmlScrap();
+		$this->tesseract = new Tesseract(title);
 		
 		Display::Ban(title, versi);
 		
@@ -118,7 +119,7 @@ class Bot {
 				if(!$cap)continue;
 			}elseif($captcha_img){
 				$img = base64_encode(Requests::get($captcha_img,$this->headers())[1]);
-				$cap = $this->captcha->Ocr($img, "MTLLM09");
+				$cap = $this->tesseract->Feytop($img);
 				foreach ($data as $key => $value) {
 					if (empty($value)) {
 						$data[$key] = $cap;
@@ -139,6 +140,7 @@ class Bot {
 				print "\r                              \r";
 				continue;
 			}
+			
 			$data = http_build_query($data);
 			sleep(5);
 			$r = Requests::post(host."faucet/verify",$this->headers(), $data)[1];
@@ -160,7 +162,7 @@ class Bot {
 				print Display::Sukses($ss);
 				$r = $this->Dashboard();
 				Display::Cetak("Balance",$r['balance']);
-				Display::Cetak("Apikey",$this->captcha->getBalance());
+				//Display::Cetak("Apikey",$this->captcha->getBalance());
 				Display::Line();
 			}elseif($wr){
 				print Display::Error($wr.n);
