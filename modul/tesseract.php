@@ -15,7 +15,7 @@ class Tesseract {
 	}
 	
 	private function isModulAvailable($command) {
-		$null = $this->isWindows ? '' : '> /dev/null 2>&1';
+		$null = $this->isWindows ? '2>NUL' : '2>/dev/null';
 		$check = shell_exec("$command $null");
 		return !empty($check);
 	}
@@ -93,7 +93,7 @@ class Tesseract {
 		return htmlspecialchars(trim($hasil));
 	}
 	private function silent_exec($cmd) {
-		$null = $this->isWindows ? '' : '> /dev/null 2>&1';
+		$null = $this->isWindows ? '2>NUL' : '2>/dev/null';
 		shell_exec("$cmd $null");
 	}
 	private function levenshtein(array $data)
